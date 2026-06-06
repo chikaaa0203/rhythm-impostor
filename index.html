@@ -195,6 +195,18 @@
 </head>
 <body>
 
+
+  <!-- 言語切り替えボタン -->
+  <div id="lang-switcher" style="position:fixed;top:10px;right:12px;z-index:9999;display:flex;gap:6px;">
+    <button onclick="setLang('ja')" id="btn-ja"
+      style="padding:5px 10px;border-radius:8px;border:1.5px solid var(--accent);background:var(--accent);color:white;font-size:13px;font-weight:700;cursor:pointer;">
+      🇯🇵 JP
+    </button>
+    <button onclick="setLang('en')" id="btn-en"
+      style="padding:5px 10px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;">
+      🇺🇸 EN
+    </button>
+  </div>
 <div id="layout">
 
   <!-- ===== 左サイド広告（PC） ===== -->
@@ -239,26 +251,26 @@
       <div id="s-home" class="screen active">
         <div class="logo">
           <div class="logo-title">🎵 リズム<span style="color:var(--accent2)">インポスター</span></div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px;">音楽でインポスターを見つけ出せ！</div>
+          <div data-key="logoSub" style="font-size:11px;color:var(--text3);margin-top:3px;">音楽でインポスターを見つけ出せ！</div>
           <div class="logo-badge">✅ 無料 · 4〜10人でプレイ</div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:12px 0;">
           <div class="card">
-            <div class="card-title">あなたの名前</div>
+            <div class="card-title" data-key="yourName">あなたの名前</div>
             <input class="input" id="h-name" placeholder="ニックネームを入力..." maxlength="12"/>
           </div>
           <div class="err" id="h-err"></div>
           <button class="btn btn-primary" id="h-create" onclick="doCreate()">🏠 ルームを作成する</button>
           <div class="or-line">または</div>
           <div class="card">
-            <div class="card-title">ルームに参加</div>
+            <div class="card-title" data-key="joinRoom">ルームに参加</div>
             <input class="input" id="h-code" placeholder="6桁のコード" maxlength="6"
               style="letter-spacing:5px;font-size:20px;text-align:center;font-family:monospace;"
               oninput="this.value=this.value.toUpperCase()"/>
             <button class="btn btn-secondary" id="h-join" onclick="doJoin()" style="margin-top:10px;">➡️ 参加する</button>
           </div>
         </div>
-        <div style="text-align:center;color:var(--text3);font-size:12px;padding:8px 0;">友達のスマホで同じコードを入力して参加！</div>
+        <div data-key="homeFooter" style="text-align:center;color:var(--text3);font-size:12px;padding:8px 0;">友達のスマホで同じコードを入力して参加！</div>
       </div>
 
       <!-- LOBBY -->
@@ -266,34 +278,34 @@
         <div class="phase-dots"><div class="dot now"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         <div class="room-code">
           <div class="room-code-num" id="l-code">------</div>
-          <div class="room-code-label">このコードを友達に送ってね</div>
+          <div data-key="shareCode" class="room-code-label">このコードを友達に送ってね</div>
         </div>
         <div class="card">
           <div class="status-row">
-            <span class="card-title" style="margin:0;">参加者</span>
+            <span data-key="players" class="card-title" style="margin:0;">参加者</span>
             <span style="font-size:12px;color:var(--accent2);font-weight:600;" id="l-count">0人</span>
           </div>
           <div class="members-list" id="l-members"></div>
         </div>
         <div id="l-host-section" style="display:none;">
           <div class="card">
-            <div class="card-title">🎵 曲セットを選択</div>
+            <div data-key="selectMusic" class="card-title">🎵 曲セットを選択</div>
             <div class="track-options" id="l-tracks"></div>
           </div>
           <button class="btn btn-primary" id="l-start" onclick="doStart()" disabled>🎵 ゲームスタート！</button>
         </div>
         <div id="l-guest-section" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:14px;" class="pulsing">
-          ホストがゲームを開始するまで待ってね 🎵
+          <span data-key="waitingHost">ホストがゲームを開始するまで待ってね 🎵</span>
         </div>
         <div class="spacer"></div>
-        <button class="btn btn-secondary" onclick="goHome()" style="margin-top:12px;">← ホームに戻る</button>
+        <button data-key="backHome" class="btn btn-secondary" onclick="goHome()" style="margin-top:12px;">← ホームに戻る</button>
       </div>
 
       <!-- COUNTDOWN -->
       <div id="s-countdown" class="screen">
         <div class="phase-dots"><div class="dot done"></div><div class="dot now"></div><div class="dot"></div><div class="dot"></div></div>
         <div class="countdown-wrap">
-          <div class="countdown-sub">全員で一緒に聴こう！</div>
+          <div data-key="listenTogether" class="countdown-sub">全員で一緒に聴こう！</div>
           <div class="countdown-big" id="cd-num">3</div>
           <div class="countdown-sub" id="cd-msg">準備して...</div>
         </div>
@@ -311,10 +323,9 @@
             <div class="beat-grid" id="p-beats"></div>
           </div>
           <div class="card">
-            <div class="card-title">ヒント</div>
+            <div data-key="hintTitle" class="card-title">ヒント</div>
             <div class="hint-box">
-              周りの人のリズム・テンポ・ノリを感じてみよう。<strong>明らかに違う</strong>と感じる人がいればインポスターかも？<br>
-              曲が終わったら「聞き終わった」を押してね。
+              <span data-key="hintBody">周りの人のリズム・テンポ・ノリを感じてみよう。<strong>明らかに違う</strong>と感じる人がいればインポスターかも？<br>曲が終わったら「聞き終わった」を押してね。</span>
             </div>
           </div>
         </div>
@@ -325,8 +336,8 @@
       <div id="s-voting" class="screen">
         <div class="phase-dots"><div class="dot done"></div><div class="dot done"></div><div class="dot done"></div><div class="dot now"></div></div>
         <div class="card" style="margin-bottom:10px;">
-          <div class="card-title" style="margin-bottom:4px;">投票フェーズ</div>
-          <div style="font-size:13px;color:var(--text2);">誰がインポスターだと思う？タップして投票！</div>
+          <div data-key="votingTitle" class="card-title" style="margin-bottom:4px;">投票フェーズ</div>
+          <div data-key="votingDesc" style="font-size:13px;color:var(--text2);">誰がインポスターだと思う？タップして投票！</div>
         </div>
         <div class="vote-grid" id="v-grid"></div>
         <button class="btn btn-danger" id="v-btn" onclick="doVote()" disabled>🗳️ この人に投票！</button>
@@ -341,7 +352,7 @@
           <div class="result-sub" id="r-sub"></div>
         </div>
         <div class="card">
-          <div class="card-title">インポスターは…</div>
+          <div data-key="imposterWas" class="card-title">インポスターは…</div>
           <div style="text-align:center;padding:12px 0;">
             <div style="font-size:36px;" id="r-imp-emoji"></div>
             <div style="font-size:18px;font-weight:700;margin-top:4px;" id="r-imp-name"></div>
@@ -359,10 +370,10 @@
           <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
         </div>
         <div class="card">
-          <div class="card-title">投票結果</div>
+          <div data-key="voteResults" class="card-title">投票結果</div>
           <div class="result-rows" id="r-rows"></div>
         </div>
-        <button class="btn btn-primary" onclick="goHome()" style="margin-top:4px;">🔄 もう一度あそぶ</button>
+        <button data-key="playAgain" class="btn btn-primary" onclick="goHome()" style="margin-top:4px;">🔄 もう一度あそぶ</button>
         <div style="height:12px;"></div>
       </div>
 
@@ -409,6 +420,206 @@
 <!-- ===== Supabase ===== -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+
+/* =============================================
+   i18n 言語切り替え
+   ============================================= */
+const I18N = {
+  ja: {
+    logoSub: '音楽でインポスターを見つけ出せ！',
+    logoBadge: '✅ 無料 · 4〜10人でプレイ',
+    yourName: 'あなたの名前',
+    namePlaceholder: 'ニックネームを入力...',
+    createRoom: '🏠 ルームを作成する',
+    creatingRoom: 'ルーム作成中...',
+    orText: 'または',
+    joinRoom: 'ルームに参加',
+    codePlaceholder: '6桁のコード',
+    joinBtn: '➡️ 参加する',
+    joiningBtn: '参加中...',
+    homeFooter: '友達のスマホで同じコードを入力して参加！',
+    shareCode: 'このコードを友達に送ってね',
+    players: '参加者',
+    selectMusic: '🎵 曲セットを選択',
+    startGame: '🎵 ゲームスタート！',
+    startingGame: 'スタート中...',
+    waitingHost: 'ホストがゲームを開始するまで待ってね 🎵',
+    backHome: '← ホームに戻る',
+    listenTogether: '全員で一緒に聴こう！',
+    getReady: '準備して...',
+    almostTime: 'もうすぐ...',
+    hereWeGo: 'いくよ！',
+    playStart: '再生スタート！',
+    hintTitle: 'ヒント',
+    hintBody: '周りの人のリズム・テンポ・ノリを感じてみよう。<strong>明らかに違う</strong>と感じる人がいればインポスターかも？<br>曲が終わったら「聞き終わった」を押してね。',
+    doneListening: '✅ 聞き終わった！',
+    waitingOthers: '⏳ 他の人を待っています...',
+    roleImposter: '🔴 あなたはインポスター！バレないように！',
+    roleNormal: '🔵 あなたは一般プレイヤー',
+    votingTitle: '投票フェーズ',
+    votingDesc: '誰がインポスターだと思う？タップして投票！',
+    voteBtn: '🗳️ この人に投票！',
+    votingBtn: '⏳ 集計中...',
+    votedBtn: '✅ 投票済み！集計中...',
+    youSuffix: ' (自分)',
+    imposterWas: 'インポスターは…',
+    voteResults: '投票結果',
+    playAgain: '🔄 もう一度あそぶ',
+    correctTitle: '正解！みんなの勝ち！',
+    wrongTitle: '騙された！インポスターの勝ち！',
+    correctSub: (name) => `${name} が最多票で、本当のインポスターでした！`,
+    wrongSub: (name) => `最多票の ${name} は無実… 本当のインポスターは別の人！`,
+    everyoneLabel: t('everyoneLabel'),
+    imposterLabel: t('imposterLabel'),
+    errName: t('errName'),
+    errCode: t('errCode'),
+    errNoRoom: 'ルームが見つかりません',
+    errStarted: 'ゲームはすでに開始しています',
+    errPrefix: 'エラー: ',
+  },
+  en: {
+    logoSub: 'Find the impostor by listening to music!',
+    logoBadge: '✅ Free · 4–10 players',
+    yourName: 'Your Name',
+    namePlaceholder: 'Enter your nickname...',
+    createRoom: '🏠 Create Room',
+    creatingRoom: 'Creating room...',
+    orText: 'or',
+    joinRoom: 'Join Room',
+    codePlaceholder: '6-digit code',
+    joinBtn: '➡️ Join',
+    joiningBtn: 'Joining...',
+    homeFooter: 'Share the code with friends and play together!',
+    shareCode: 'Share this code with your friends',
+    players: 'Players',
+    selectMusic: '🎵 Select Music Set',
+    startGame: '🎵 Start Game!',
+    startingGame: 'Starting...',
+    waitingHost: 'Waiting for the host to start the game 🎵',
+    backHome: '← Back to Home',
+    listenTogether: 'Everyone listen together!',
+    getReady: 'Get ready...',
+    almostTime: 'Almost...',
+    hereWeGo: 'Here we go!',
+    playStart: 'Play!',
+    hintTitle: 'Hint',
+    hintBody: 'Feel the rhythm, tempo, and groove of the people around you. If someone sounds <strong>clearly different</strong>, they might be the impostor!<br>Press "Done Listening" when you're finished.',
+    doneListening: '✅ Done Listening!',
+    waitingOthers: '⏳ Waiting for others...',
+    roleImposter: "🔴 You are the Impostor! Don't get caught!",
+    roleNormal: '🔵 You are a Regular Player',
+    votingTitle: 'Voting Phase',
+    votingDesc: 'Who do you think is the impostor? Tap to vote!',
+    voteBtn: '🗳️ Vote for this person!',
+    votingBtn: '⏳ Counting votes...',
+    votedBtn: '✅ Voted! Counting...',
+    youSuffix: ' (You)',
+    imposterWas: 'The Impostor was…',
+    voteResults: 'Vote Results',
+    playAgain: '🔄 Play Again',
+    correctTitle: 'Correct! Everyone wins!',
+    wrongTitle: 'Fooled! The Impostor wins!',
+    correctSub: (name) => `${name} got the most votes and was the real Impostor!`,
+    wrongSub: (name) => `Most voted: ${name} was innocent… The real Impostor was someone else!`,
+    everyoneLabel: '👥 Everyone: ',
+    imposterLabel: '🔴 Impostor: ',
+    errName: 'Please enter your name',
+    errCode: 'Please enter the 6-digit code',
+    errNoRoom: 'Room not found',
+    errStarted: 'Game has already started',
+    errPrefix: 'Error: ',
+  }
+};
+
+let currentLang = 'ja';
+function t(key, ...args) {
+  const val = I18N[currentLang][key];
+  return typeof val === 'function' ? val(...args) : (val || I18N['ja'][key] || key);
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  // ボタンスタイル切り替え
+  document.getElementById('btn-ja').style.background = lang==='ja' ? 'var(--accent)' : 'var(--surface2)';
+  document.getElementById('btn-ja').style.color = lang==='ja' ? 'white' : 'var(--text2)';
+  document.getElementById('btn-ja').style.borderColor = lang==='ja' ? 'var(--accent)' : 'var(--border2)';
+  document.getElementById('btn-en').style.background = lang==='en' ? 'var(--accent)' : 'var(--surface2)';
+  document.getElementById('btn-en').style.color = lang==='en' ? 'white' : 'var(--text2)';
+  document.getElementById('btn-en').style.borderColor = lang==='en' ? 'var(--accent)' : 'var(--border2)';
+  applyLang();
+}
+
+function applyLang() {
+  const L = I18N[currentLang];
+  // ホーム
+  const logoSub = document.querySelector('.logo div[data-key="logoSub"]');
+  if(logoSub) logoSub.textContent = L.logoSub;
+  const logoBadge = document.querySelector('.logo-badge');
+  if(logoBadge) logoBadge.textContent = L.logoBadge;
+
+  const nameLabel = document.querySelector('[data-key="yourName"]');
+  if(nameLabel) nameLabel.textContent = L.yourName;
+  const nameInput = document.getElementById('h-name');
+  if(nameInput) nameInput.placeholder = L.namePlaceholder;
+  const createBtn = document.getElementById('h-create');
+  if(createBtn && !createBtn.disabled) createBtn.textContent = L.createRoom;
+  const orLine = document.querySelector('.or-line');
+  if(orLine) orLine.textContent = L.orText;
+  const joinLabel = document.querySelector('[data-key="joinRoom"]');
+  if(joinLabel) joinLabel.textContent = L.joinRoom;
+  const codeInput = document.getElementById('h-code');
+  if(codeInput) codeInput.placeholder = L.codePlaceholder;
+  const joinBtn = document.getElementById('h-join');
+  if(joinBtn && !joinBtn.disabled) joinBtn.textContent = L.joinBtn;
+  const homeFooter = document.querySelector('[data-key="homeFooter"]');
+  if(homeFooter) homeFooter.textContent = L.homeFooter;
+
+  // ロビー
+  const shareCode = document.querySelector('[data-key="shareCode"]');
+  if(shareCode) shareCode.textContent = L.shareCode;
+  const playersLabel = document.querySelector('[data-key="players"]');
+  if(playersLabel) playersLabel.textContent = L.players;
+  const selectMusic = document.querySelector('[data-key="selectMusic"]');
+  if(selectMusic) selectMusic.textContent = L.selectMusic;
+  const startBtn = document.getElementById('l-start');
+  if(startBtn && !startBtn.disabled) startBtn.textContent = L.startGame;
+  const waitingHost = document.querySelector('[data-key="waitingHost"]');
+  if(waitingHost) waitingHost.textContent = L.waitingHost;
+  const backHome = document.querySelector('[data-key="backHome"]');
+  if(backHome) backHome.textContent = L.backHome;
+
+  // カウントダウン
+  const listenTogether = document.querySelector('[data-key="listenTogether"]');
+  if(listenTogether) listenTogether.textContent = L.listenTogether;
+
+  // プレイ中
+  const hintTitle = document.querySelector('[data-key="hintTitle"]');
+  if(hintTitle) hintTitle.textContent = L.hintTitle;
+  const hintBody = document.querySelector('[data-key="hintBody"]');
+  if(hintBody) hintBody.innerHTML = L.hintBody;
+  const doneBtn = document.getElementById('p-done');
+  if(doneBtn && !doneBtn.disabled) doneBtn.textContent = L.doneListening;
+
+  // 投票
+  const votingTitle = document.querySelector('[data-key="votingTitle"]');
+  if(votingTitle) votingTitle.textContent = L.votingTitle;
+  const votingDesc = document.querySelector('[data-key="votingDesc"]');
+  if(votingDesc) votingDesc.textContent = L.votingDesc;
+  const voteBtn = document.getElementById('v-btn');
+  if(voteBtn && !voteBtn.disabled) voteBtn.textContent = L.voteBtn;
+
+  // 結果
+  const imposterWas = document.querySelector('[data-key="imposterWas"]');
+  if(imposterWas) imposterWas.textContent = L.imposterWas;
+  const voteResults = document.querySelector('[data-key="voteResults"]');
+  if(voteResults) voteResults.textContent = L.voteResults;
+  const playAgain = document.querySelector('[data-key="playAgain"]');
+  if(playAgain) playAgain.textContent = L.playAgain;
+
+  // トラックオプション再描画
+  renderTrackOpts();
+}
+
 /* =============================================
    SUPABASE 設定
    ============================================= */
@@ -691,8 +902,8 @@ async function fetchMembers(){
 
 async function doCreate(){
   const name=document.getElementById('h-name').value.trim();
-  if(!name){showErr('名前を入力してください');return;}
-  setBtn('h-create',false,'ルーム作成中...');
+  if(!name){showErr(t('errName'));return;}
+  setBtn('h-create',false,t('creatingRoom'));
   try{
     const userId=uid();
     await sb.from('users').insert({id:userId,name,icon_url:EMOJIS[0]});
@@ -702,19 +913,19 @@ async function doCreate(){
     Object.assign(G,{myName:name,myUserId:userId,myMemberId:mem.id,isHost:true,roomId:code,roomDbId:room.id,selTrack:TRACK_SETS[0]});
     await openLobby();
   }catch(e){showErr('エラー: '+e.message);}
-  finally{setBtn('h-create',true,'🏠 ルームを作成する');}
+  finally{setBtn('h-create',true,t('createRoom'));}
 }
 
 async function doJoin(){
   const name=document.getElementById('h-name').value.trim();
   const code=document.getElementById('h-code').value.trim().toUpperCase();
-  if(!name){showErr('名前を入力してください');return;}
-  if(code.length!==6){showErr('6桁のコードを入力してください');return;}
-  setBtn('h-join',false,'参加中...');
+  if(!name){showErr(t('errName'));return;}
+  if(code.length!==6){showErr(t('errCode'));return;}
+  setBtn('h-join',false,t('joiningBtn'));
   try{
     const {data:room,error:re}=await sb.from('rooms').select().eq('room_code',code).single();
-    if(re||!room) throw new Error('ルームが見つかりません');
-    if(room.status!=='waiting') throw new Error('ゲームはすでに開始しています');
+    if(re||!room) throw new Error(t('errNoRoom'));
+    if(room.status!=='waiting') throw new Error(t('errStarted'));
     const userId=uid();
     const idx=Math.floor(Math.random()*EMOJIS.length);
     await sb.from('users').insert({id:userId,name,icon_url:EMOJIS[idx]});
@@ -722,7 +933,7 @@ async function doJoin(){
     Object.assign(G,{myName:name,myUserId:userId,myMemberId:mem.id,isHost:false,roomId:code,roomDbId:room.id});
     await openLobby();
   }catch(e){showErr('エラー: '+e.message);}
-  finally{setBtn('h-join',true,'➡️ 参加する');}
+  finally{setBtn('h-join',true,t('joinBtn'));}
 }
 
 async function openLobby(){
@@ -792,7 +1003,7 @@ function subscribeRoom(){
 }
 
 async function doStart(){
-  setBtn('l-start',false,'スタート中...');
+  setBtn('l-start',false,t('startingGame'));
   try{
     await fetchMembers();
     const impIdx=Math.floor(Math.random()*G.members.length);
@@ -805,7 +1016,7 @@ async function doStart(){
       }).eq('id',G.members[i].memberId);
     }
     await sb.from('rooms').update({status:'playing',track_set_id:ts.id}).eq('id',G.roomDbId);
-  }catch(e){ alert('エラー: '+e.message); setBtn('l-start',true,'🎵 ゲームスタート！'); }
+  }catch(e){ alert('エラー: '+e.message); setBtn('l-start',true,t('startGame')); }
 }
 
 function applyMyTrack(){
@@ -822,7 +1033,7 @@ function startCountdown(){
   numEl.textContent=n;
   const t=setInterval(()=>{
     n--;
-    if(n<=0){ clearInterval(t); numEl.textContent='🎵'; msgEl.textContent='再生スタート！'; setTimeout(startPlaying,500); }
+    if(n<=0){ clearInterval(t); numEl.textContent='🎵'; msgEl.textContent=t('playStart'); setTimeout(startPlaying,500); }
     else{ numEl.textContent=n; msgEl.textContent=n===2?'もうすぐ...':'いくよ！'; }
   },1000);
 }
@@ -832,8 +1043,8 @@ function startPlaying(){
   document.getElementById('p-icon').textContent=m.icon;
   document.getElementById('p-name').textContent=m.name;
   const roleEl=document.getElementById('p-role');
-  if(G.isImposter){ roleEl.textContent='🔴 あなたはインポスター！バレないように！'; roleEl.className='player-role imposter'; }
-  else{ roleEl.textContent='🔵 あなたは一般プレイヤー'; roleEl.className='player-role normal'; }
+  if(G.isImposter){ roleEl.textContent=t('roleImposter'); roleEl.className='player-role imposter'; }
+  else{ roleEl.textContent=t('roleNormal'); roleEl.className='player-role normal'; }
   const steps=m.steps||16;
   document.getElementById('p-beats').innerHTML=Array.from({length:steps},(_,i)=>`<div class="beat-dot" id="bd-${i}"></div>`).join('');
   document.getElementById('p-viz').innerHTML=Array.from({length:14},(_,i)=>`<div class="vbar" id="vb-${i}" style="height:4px;"></div>`).join('');
@@ -915,7 +1126,7 @@ function stopMusic(){
 async function doDone(){
   stopMusic();
   document.getElementById('p-done').disabled=true;
-  document.getElementById('p-done').textContent='⏳ 他の人を待っています...';
+  document.getElementById('p-done').textContent=t('waitingOthers');
   await sb.from('room_members').update({is_done:true}).eq('id',G.myMemberId);
   if(G.isHost) setTimeout(async()=>{ await sb.from('rooms').update({status:'voting'}).eq('id',G.roomDbId); },2500);
 }
@@ -926,7 +1137,7 @@ async function showVoting(){
     <div class="vote-card ${m.userId===G.myUserId?'me':''}" id="vc-${m.userId}"
       onclick="${m.userId!==G.myUserId?`pickVote('${m.userId}')`:''}" >
       <div class="vote-emoji">${m.emoji}</div>
-      <div class="vote-name">${m.name}${m.userId===G.myUserId?' (自分)':''}</div>
+      <div class="vote-name">${m.name}${m.userId===G.myUserId?t('youSuffix'):''}</div>
     </div>`).join('');
   show('s-voting');
 }
@@ -939,9 +1150,9 @@ function pickVote(uid){
 async function doVote(){
   if(!G.myVote) return;
   document.getElementById('v-btn').disabled=true;
-  document.getElementById('v-btn').innerHTML='<span class="spin"></span>投票中...';
+  document.getElementById('v-btn').innerHTML='<span class="spin"></span>'+t('votingBtn');
   await sb.from('room_members').update({vote_target_user_id:G.myVote}).eq('id',G.myMemberId);
-  document.getElementById('v-btn').textContent='✅ 投票済み！集計中...';
+  document.getElementById('v-btn').textContent=t('votedBtn');
   if(G.isHost) setTimeout(async()=>{ await sb.from('rooms').update({status:'result'}).eq('id',G.roomDbId); },3000);
 }
 
@@ -955,9 +1166,9 @@ async function showResult(){
   const realImp=G.members.find(m=>m.isImposter);
   const correct=topUid===realImp?.userId;
   document.getElementById('r-icon').textContent=correct?'🎉':'😈';
-  document.getElementById('r-title').textContent=correct?'正解！みんなの勝ち！':'騙された！インポスターの勝ち！';
+  document.getElementById('r-title').textContent=correct?t('correctTitle'):t('wrongTitle');
   document.getElementById('r-sub').textContent=correct
-    ?`${topMember?.name} が最多票で、本当のインポスターでした！`
+    ?t('correctSub', topMember?.name)
     :`最多票の ${topMember?.name||'?'} は無実… 本当のインポスターは別の人！`;
   document.getElementById('r-imp-emoji').textContent=realImp?.emoji||'❓';
   document.getElementById('r-imp-name').textContent=realImp?.name||'---';
@@ -968,7 +1179,7 @@ async function showResult(){
       <div style="font-size:20px;">${m.emoji}</div>
       <div class="result-row-info">
         <div class="result-row-name">${m.name}${m.isImposter?' 🔴':''}${m.userId===G.myUserId?' (あなた)':''}</div>
-        <div class="result-row-track">${m.isImposter?G.selTrack.imposterLabel:G.selTrack.normalLabel}</div>
+        <div class="result-row-track">${m.isImposter?G.isImposter?G.selTrack.imposterLabel:G.selTrack.normalLabel}</div>
       </div>
       <div class="result-votes">${votes[m.userId]||0}票</div>
     </div>`).join('');
