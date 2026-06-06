@@ -597,51 +597,72 @@ function pickTrack(i){
 }
 
 /* ============ REALTIME ============ */
+/* ============ POLLING ============ */
 let G_pollTimer=null;
 let G_lastStatus='waiting';
+let G_polling=false;
 
-function subscribeRoom(){
-  if(G.channel)sb.removeChannel(G.channel);
+function startPolling(){
+  stopPolling();
   G_lastStatus='waiting';
-
-  // Realtimeチャンネル
-  G.channel=sb.channel('room:'+G.roomDbId)
-    .on('postgres_changes',{event:'*',schema:'public',table:'rooms',filter:`id=eq.${G.roomDbId}`},async p=>{
-      const s=p.new?.status;
-      if(s&&s!==G_lastStatus){G_lastStatus=s;await handleStatusChange(s);}
-    })
-    .on('postgres_changes',{event:'*',schema:'public',table:'room_members'},async()=>{
-      await fetchMembers();
-    })
-    .subscribe();
-
-  // ポーリング（3秒ごと）でメンバー更新＆ステータス監視
-  if(G_pollTimer)clearInterval(G_pollTimer);
-  G_pollTimer=setInterval(async()=>{
-    if(!G.roomDbId)return;
-    await fetchMembers();
-    const {data:r}=await sb.from('rooms').select('status,track_set_id').eq('id',G.roomDbId).single();
-    if(r&&r.status!==G_lastStatus){G_lastStatus=r.status;await handleStatusChange(r.status,r.track_set_id);}
-  },3000);
+  G_polling=true;
+  poll();
 }
 
-async function handleStatusChange(status, trackSetId){
-  if(status==='playing'){
-    const {data:r}=await sb.from('rooms').select('track_set_id').eq('id',G.roomDbId).single();
-    const tid=trackSetId||r?.track_set_id;
-    if(tid)G.selTrack=TRACKS.find(tr=>tr.id===tid)||TRACKS[0];
-    await fetchMembers();applyMyTrack();
-    if(G_pollTimer){clearInterval(G_pollTimer);G_pollTimer=null;}
-    startCountdown();
-  }
-  if(status==='voting'){
-    if(G_pollTimer){clearInterval(G_pollTimer);G_pollTimer=null;}
-    await fetchMembers();showVoting();
-  }
-  if(status==='result'){
-    if(G_pollTimer){clearInterval(G_pollTimer);G_pollTimer=null;}
-    await fetchMembers();showResult();
-  }
+function stopPolling(){
+  G_polling=false;
+  if(G_pollTimer){clearTimeout(G_pollTimer);G_pollTimer=null;}
+  if(G.channel){try{sb.removeChannel(G.channel);}catch(e){}G.channel=null;}
+}
+
+async function poll(){
+  if(!G_polling||!G.roomDbId)return;
+  try{
+    // メンバー取得
+    const {data:members,error:me}=await sb.from('room_members')
+      .select('id,user_id,is_imposter,assigned_track_id,vote_target_user_id,users(id,name,icon_url)')
+      .eq('room_id',G.roomDbId);
+    if(!me&&members){
+      const {data:room}=await sb.from('rooms').select('host_id,status,track_set_id').eq('id',G.roomDbId).single();
+      if(room){
+        G.members=members.map(m=>({
+          memberId:m.id,userId:m.user_id,
+          name:m.users?.name||'?',emoji:m.users?.icon_url||'🐶',
+          isHost:m.user_id===room.host_id,
+          isImposter:m.is_imposter,trackId:m.assigned_track_id,
+          voteTarget:m.vote_target_user_id
+        }));
+        renderMembers();
+        // ステータス変化チェック
+        if(room.status!==G_lastStatus){
+          const prev=G_lastStatus;
+          G_lastStatus=room.status;
+          if(room.status==='playing'&&prev==='waiting'){
+            G.selTrack=TRACKS.find(tr=>tr.id===room.track_set_id)||TRACKS[0];
+            applyMyTrack();
+            stopPolling();
+            startCountdown();
+            return;
+          }
+          if(room.status==='voting'&&prev!=='result'){
+            stopPolling();
+            showVoting();
+            return;
+          }
+          if(room.status==='result'){
+            stopPolling();
+            showResult();
+            return;
+          }
+        }
+      }
+    }
+  }catch(e){console.warn('poll error',e);}
+  if(G_polling)G_pollTimer=setTimeout(poll,2000);
+}
+
+function subscribeRoom(){
+  startPolling();
 }
 
 /* ============ START ============ */
@@ -787,7 +808,7 @@ async function showResult(){
 /* ============ HOME ============ */
 function goHome(){
   stopMusic();
-  if(G_pollTimer){clearInterval(G_pollTimer);G_pollTimer=null;}
+  stopPolling();
   if(G.channel){sb.removeChannel(G.channel);}
   G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0};
   document.getElementById('h-name').value='';const jn=document.getElementById('h-join-name');if(jn)jn.value='';
