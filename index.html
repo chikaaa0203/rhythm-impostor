@@ -943,13 +943,16 @@ function startMusicCountdown(playAtISO){
   const playAt=new Date(playAtISO).getTime();
   showOverlayState('cd');
 
-  // iOS検出→タップボタン表示
+  // iOS
   const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
   const iosBtn=document.getElementById('p-ios-tap');
   if(iosBtn)iosBtn.style.display=isIOS?'block':'none';
 
-  // AudioContext事前起動（非iOS）
+  // AudioContext事前起動
   try{
+    if(window._iosAudioCtx&&window._iosAudioCtx.state!=='closed'){
+      G.audioCtx=window._iosAudioCtx;
+    }
     if(!G.audioCtx||G.audioCtx.state==='closed'){
       G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
     }
@@ -958,53 +961,74 @@ function startMusicCountdown(playAtISO){
 
   const numEl=document.getElementById('p-cd-num');
   const msgEl=document.getElementById('p-cd-msg');
-  // setInterval で確実に動かす（setTimeout より安定）
+  const labels={3:'準備して！',2:'もうすぐ…',1:'いくよ！'};
+
   let musicStarted=false;
-  const cdInterval=setInterval(()=>{
+
+  function cdTick(){
     const remaining=playAt-Date.now();
+
     if(remaining<=0){
-      clearInterval(cdInterval);
+      // カウントダウン終了 → 音楽再生
       if(musicStarted)return;
       musicStarted=true;
       if(numEl)numEl.textContent='🎵';
-      if(msgEl)msgEl.textContent='スタート！';
-      setTimeout(()=>{
-        const overlay=document.getElementById('p-tap-overlay');
-        if(overlay)overlay.style.display='none';
-        // iOS AudioContext再利用または新規作成
-        try{
-          if(window._iosAudioCtx&&window._iosAudioCtx.state!=='closed'){
-            G.audioCtx=window._iosAudioCtx;
-          }
-          if(!G.audioCtx||G.audioCtx.state==='closed'){
-            G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-          }
-          if(G.audioCtx.state==='suspended')G.audioCtx.resume();
-        }catch(e){}
-        // 30秒後に強制投票
-        G.forceVoteTimer=setTimeout(()=>forceGoVoting(),30000);
-        // 残り時間UIカウント
-        let timeLeft=30;
-        const timerEl=document.getElementById('p-timer');
-        const preEl=document.getElementById('p-tap-timer-pre');
-        if(timerEl)timerEl.textContent=timeLeft;
-        const uiTimer=setInterval(()=>{
-          timeLeft--;
-          const t=Math.max(0,timeLeft);
-          if(timerEl)timerEl.textContent=t;
-          if(preEl)preEl.textContent=t+'秒後に自動で投票へ';
-          if(timeLeft<=0){clearInterval(uiTimer);forceGoVoting();}
-        },1000);
-        G.uiTimer=uiTimer;
-        playMusic();
-      },300);
+      if(msgEl)msgEl.textContent='';
+
+      // オーバーレイを隠す
+      const overlay=document.getElementById('p-tap-overlay');
+      if(overlay)overlay.style.display='none';
+
+      // AudioContext確認
+      try{
+        if(window._iosAudioCtx&&window._iosAudioCtx.state!=='closed'){
+          G.audioCtx=window._iosAudioCtx;
+        }
+        if(!G.audioCtx||G.audioCtx.state==='closed'){
+          G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+        }
+        if(G.audioCtx.state==='suspended')G.audioCtx.resume();
+      }catch(e){}
+
+      // 音楽再生開始
+      playMusic();
+
+      // 残り時間UIカウント（音楽再生後に開始）
+      let timeLeft=30;
+      const timerEl=document.getElementById('p-timer');
+      const preEl=document.getElementById('p-tap-timer-pre');
+      if(timerEl)timerEl.textContent=timeLeft;
+      if(preEl)preEl.textContent=timeLeft+'秒後に自動で投票へ';
+
+      G.uiTimer=setInterval(()=>{
+        timeLeft--;
+        const t=Math.max(0,timeLeft);
+        if(timerEl)timerEl.textContent=t;
+        if(preEl)preEl.textContent=t+'秒後に自動で投票へ';
+        if(timeLeft<=0){
+          clearInterval(G.uiTimer);
+          G.uiTimer=null;
+          forceGoVoting();
+        }
+      },1000);
+
+      // 30秒後にforceGoVoting（uiTimerのバックアップ）
+      G.forceVoteTimer=setTimeout(()=>{
+        if(G.uiTimer){clearInterval(G.uiTimer);G.uiTimer=null;}
+        forceGoVoting();
+      },31000);
+
       return;
     }
+
+    // カウントダウン表示
     const secs=Math.ceil(remaining/1000);
-    const labels={3:'準備して！',2:'もうすぐ…',1:'いくよ！'};
     if(numEl)numEl.textContent=labels[secs]||String(secs);
     if(msgEl)msgEl.textContent='';
-  },100);
+    setTimeout(cdTick,80);
+  }
+
+  cdTick();
 }
 
 
@@ -1051,6 +1075,7 @@ function stopMusic(){
   if(G.forceVoteTimer){clearTimeout(G.forceVoteTimer);G.forceVoteTimer=null;}
   if(G.uiTimer){clearInterval(G.uiTimer);G.uiTimer=null;}
   if(G.audioCtx){try{G.audioCtx.close();}catch(e){}G.audioCtx=null;}
+  if(G_musicWaitTimer){clearInterval(G_musicWaitTimer);G_musicWaitTimer=null;}
 }
 
 /* ============ DONE ============ */
