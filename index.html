@@ -219,7 +219,7 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
         <div class="hero-logo">🎧</div>
         <div class="hero-title">Music Imposter</div>
         <div class="hero-sub" id="h-sub">リズムに乗ってインポスターを見つけ出せ！</div>
-        <div class="hero-badge" id="h-badge">✅ 無料 · 4〜10人でプレイ</div>
+        <div class="hero-badge" id="h-badge">✅ 無料 · 3〜10人でプレイ</div>
       </div>
 
       <div class="section-label" id="h-name-label">あなたの名前</div>
@@ -239,8 +239,8 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
           <div class="section-label" id="h-join-name-label" style="margin-bottom:6px;">名前</div>
           <input class="input" id="h-join-name" placeholder="ニックネームを入力..." maxlength="12"/>
         </div>
-        <div class="section-label" id="h-join-code-label" style="margin-bottom:6px;">ルームコード（4桁）</div>
-        <input class="input code-input" id="h-code" placeholder="----" maxlength="4" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
+        <div class="section-label" id="h-join-code-label" style="margin-bottom:6px;">ルームコード（6桁）</div>
+        <input class="input code-input" id="h-code" placeholder="------" maxlength="6" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
       </div>
       <button class="btn btn-ghost" id="h-join" onclick="doJoin()">➡️ 参加する</button>
 
@@ -380,11 +380,11 @@ const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 /* ============ i18n ============ */
 const I18N={
   ja:{
-    hSub:'リズムに乗ってインポスターを見つけ出せ！',hBadge:'✅ 無料 · 4〜10人でプレイ',
+    hSub:'リズムに乗ってインポスターを見つけ出せ！',hBadge:'✅ 無料 · 3〜10人でプレイ',
     hNameLabel:'あなたの名前',hNamePh:'ニックネームを入力...',
     hCreate:'🏠 ルームを作成する',hCreating:'作成中...',
-    hOr:'または',hJoinLabel:'ルームに参加',hCodePh:'----',
-    hJoin:'➡️ 参加する',hJoining:'参加中...',hJoinNameLabel:'名前',hJoinCodeLabel:'ルームコード（4桁）',hFooter:'友達のスマホで同じコードを入力して参加！',
+    hOr:'または',hJoinLabel:'ルームに参加',hCodePh:'------',
+    hJoin:'➡️ 参加する',hJoining:'参加中...',hJoinNameLabel:'名前',hJoinCodeLabel:'ルームコード（6桁）',hFooter:'友達のスマホで同じコードを入力して参加！',
     lCodeLabel:'ルームコード',lCodeHint:'このコードを友達に送ってね',
     lPlayersLabel:'参加者',lTrackLabel:'🎵 曲セットを選択',lRandomLabel:'曲セットはスタート時にランダム選択！',lRandomSub:'10種類のジャンルからランダムで出題されます',
     lStart:'🎵 ゲームスタート！',lStarting:'スタート中...',
@@ -400,16 +400,16 @@ const I18N={
     rWinBig:'正解！みんなの勝ち！',rLoseBig:'騙された！インポスターの勝ち！',
     rWinSub:(n)=>`${n} が最多票で、本当のインポスターでした！`,
     rLoseSub:(n)=>`最多票の ${n} は無実… 本当のインポスターは別の人！`,
-    youSuffix:' (自分)',errName:'名前を入力してください',errCode:'4桁の数字を入力してください',
+    youSuffix:' (自分)',errName:'名前を入力してください',errCode:'6桁の数字を入力してください',
     errNoRoom:'ルームが見つかりません',errStarted:'ゲームはすでに開始しています',errPfx:'エラー: ',
     everyoneLabel:'👥 全員：',imposterLabel:'🔴 インポスター：',
   },
   en:{
-    hSub:'Find the impostor by listening to music!',hBadge:'✅ Free · 4–10 players',
+    hSub:'Find the impostor by listening to music!',hBadge:'✅ Free · 3–10 players',
     hNameLabel:'Your Name',hNamePh:'Enter your nickname...',
     hCreate:'🏠 Create Room',hCreating:'Creating...',
-    hOr:'or',hJoinLabel:'Join Room',hCodePh:'----',
-    hJoin:'➡️ Join',hJoining:'Joining...',hJoinNameLabel:'Name',hJoinCodeLabel:'Room Code (4 digits)',hFooter:'Share the code with friends and play together!',
+    hOr:'or',hJoinLabel:'Join Room',hCodePh:'------',
+    hJoin:'➡️ Join',hJoining:'Joining...',hJoinNameLabel:'Name',hJoinCodeLabel:'Room Code (6 digits)',hFooter:'Share the code with friends and play together!',
     lCodeLabel:'Room Code',lCodeHint:'Share this code with your friends',
     lPlayersLabel:'Players',lTrackLabel:'🎵 Select Music Set',lRandomLabel:'Track set chosen randomly at game start!',lRandomSub:'One of 10 genres picked at random each round',
     lStart:'🎵 Start Game!',lStarting:'Starting...',
@@ -425,7 +425,7 @@ const I18N={
     rWinBig:'Correct! Everyone wins!',rLoseBig:'Fooled! The Impostor wins!',
     rWinSub:(n)=>`${n} got the most votes and was the real Impostor!`,
     rLoseSub:(n)=>`Most voted: ${n} was innocent… The real Impostor was someone else!`,
-    youSuffix:' (You)',errName:'Please enter your name',errCode:'Please enter the 4-digit code',
+    youSuffix:' (You)',errName:'Please enter your name',errCode:'Please enter the 6-digit code',
     errNoRoom:'Room not found',errStarted:'Game has already started',errPfx:'Error: ',
     everyoneLabel:'👥 Everyone: ',imposterLabel:'🔴 Impostor: ',
   }
@@ -495,7 +495,7 @@ const TRACKS=[
 /* ============ STATE ============ */
 const EMOJIS=['🐶','🦊','🐱','🐼','🐨','🐯','🦁','🐸','🐧','🦋'];
 function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2);}
-function rndRoom(){return String(Math.floor(1000+Math.random()*9000));}
+function rndRoom(){return (''+Math.floor(100000+Math.random()*900000));}
 
 let G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0};
 
@@ -542,12 +542,12 @@ async function doCreate(){
 async function doJoin(){
   const joinNameEl=document.getElementById('h-join-name');
   const name=(joinNameEl?joinNameEl.value.trim():'')||document.getElementById('h-name').value.trim();
-  const code=document.getElementById('h-code').value.trim();
+  const code=document.getElementById('h-code').value.replace(/\s/g,'').trim();
   if(!name){showErr(L('errName'));return;}
-  if(code.length!==4){showErr(L('errCode'));return;}
+  if(code.length!==6){showErr(L('errCode'));return;}
   setBtn('h-join',false,L('hJoining'));
   try{
-    const {data:room,error:re}=await sb.from('rooms').select().eq('room_code',code).single();
+    const {data:room,error:re}=await sb.from('rooms').select().eq('room_code',code.trim()).single();
     if(re||!room)throw new Error(L('errNoRoom'));
     if(room.status!=='waiting')throw new Error(L('errStarted'));
     const userId=uid();
@@ -581,7 +581,7 @@ function renderMembers(){
   if(el)el.innerHTML=G.members.map(m=>`<div class="player-row"><div class="player-av">${m.emoji}</div><div class="player-name">${m.name}</div>${m.isHost?'<span class="badge badge-host">HOST</span>':''} ${m.userId===G.myUserId?'<span class="badge badge-you">YOU</span>':''}</div>`).join('');
   if(cnt)cnt.textContent=lang==='ja'?`${G.members.length}人`:`${G.members.length} players`;
   const sb2=document.getElementById('l-start');
-  if(sb2)sb2.disabled=G.members.length<2;
+  if(sb2)sb2.disabled=G.members.length<3;
 }
 
 function renderTrackOpts(){
