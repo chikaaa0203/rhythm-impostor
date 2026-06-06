@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>Rhythm Impostor | Find the Impostor by Music!</title>
+<title>Music Imposter | Find the Impostor by Music!</title>
 <meta name="description" content="A party game where you find the impostor by listening to music! Free multiplayer game 4-10 players."/>
-<meta property="og:title" content="🎵 Rhythm Impostor"/>
+<meta property="og:title" content="🎵 Music Imposter"/>
 <meta property="og:description" content="Find the impostor by listening to music!"/>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9885018064269523" crossorigin="anonymous"></script>
@@ -217,8 +217,8 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
     <div id="s-home" class="screen active">
       <div class="hero">
         <div class="hero-logo">🎧</div>
-        <div class="hero-title">Rhythm Impostor</div>
-        <div class="hero-sub" id="h-sub">音楽でインポスターを見つけ出せ！</div>
+        <div class="hero-title">Music Imposter</div>
+        <div class="hero-sub" id="h-sub">リズムに乗ってインポスターを見つけ出せ！</div>
         <div class="hero-badge" id="h-badge">✅ 無料 · 4〜10人でプレイ</div>
       </div>
 
@@ -235,7 +235,12 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
 
       <div class="section-label" id="h-join-label">ルームに参加</div>
       <div class="glass-card">
-        <input class="input code-input" id="h-code" placeholder="------" maxlength="6" oninput="this.value=this.value.toUpperCase()"/>
+        <div style="margin-bottom:10px;">
+          <div class="section-label" id="h-join-name-label" style="margin-bottom:6px;">名前</div>
+          <input class="input" id="h-join-name" placeholder="ニックネームを入力..." maxlength="12"/>
+        </div>
+        <div class="section-label" id="h-join-code-label" style="margin-bottom:6px;">ルームコード（4桁）</div>
+        <input class="input code-input" id="h-code" placeholder="----" maxlength="4" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
       </div>
       <button class="btn btn-ghost" id="h-join" onclick="doJoin()">➡️ 参加する</button>
 
@@ -262,9 +267,10 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
       </div>
 
       <div id="l-host-area" style="display:none;">
-        <div class="glass-card">
-          <div class="section-label" id="l-track-label">🎵 曲セットを選択</div>
-          <div class="track-grid" id="l-tracks"></div>
+        <div class="glass-card" style="text-align:center;padding:16px;">
+          <div style="font-size:32px;margin-bottom:8px;">🎲</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);" id="l-random-label">曲セットはスタート時にランダム選択！</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;" id="l-random-sub">10種類のジャンルからランダムで出題されます</div>
         </div>
         <button class="btn btn-primary" id="l-start" onclick="doStart()" disabled>🎵 ゲームスタート！</button>
       </div>
@@ -374,13 +380,13 @@ const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 /* ============ i18n ============ */
 const I18N={
   ja:{
-    hSub:'音楽でインポスターを見つけ出せ！',hBadge:'✅ 無料 · 4〜10人でプレイ',
+    hSub:'リズムに乗ってインポスターを見つけ出せ！',hBadge:'✅ 無料 · 4〜10人でプレイ',
     hNameLabel:'あなたの名前',hNamePh:'ニックネームを入力...',
     hCreate:'🏠 ルームを作成する',hCreating:'作成中...',
-    hOr:'または',hJoinLabel:'ルームに参加',hCodePh:'------',
-    hJoin:'➡️ 参加する',hJoining:'参加中...',hFooter:'友達のスマホで同じコードを入力して参加！',
+    hOr:'または',hJoinLabel:'ルームに参加',hCodePh:'----',
+    hJoin:'➡️ 参加する',hJoining:'参加中...',hJoinNameLabel:'名前',hJoinCodeLabel:'ルームコード（4桁）',hFooter:'友達のスマホで同じコードを入力して参加！',
     lCodeLabel:'ルームコード',lCodeHint:'このコードを友達に送ってね',
-    lPlayersLabel:'参加者',lTrackLabel:'🎵 曲セットを選択',
+    lPlayersLabel:'参加者',lTrackLabel:'🎵 曲セットを選択',lRandomLabel:'曲セットはスタート時にランダム選択！',lRandomSub:'10種類のジャンルからランダムで出題されます',
     lStart:'🎵 ゲームスタート！',lStarting:'スタート中...',
     lWait:'ホストがゲームを開始するまで待ってね 🎵',lBack:'← ホームに戻る',
     cdTop:'全員で一緒に聴こう！',cdReady:'準備して...',cdAlmost:'もうすぐ...',cdGo:'いくよ！',cdPlay:'再生スタート！',
@@ -394,7 +400,7 @@ const I18N={
     rWinBig:'正解！みんなの勝ち！',rLoseBig:'騙された！インポスターの勝ち！',
     rWinSub:(n)=>`${n} が最多票で、本当のインポスターでした！`,
     rLoseSub:(n)=>`最多票の ${n} は無実… 本当のインポスターは別の人！`,
-    youSuffix:' (自分)',errName:'名前を入力してください',errCode:'6桁のコードを入力してください',
+    youSuffix:' (自分)',errName:'名前を入力してください',errCode:'4桁の数字を入力してください',
     errNoRoom:'ルームが見つかりません',errStarted:'ゲームはすでに開始しています',errPfx:'エラー: ',
     everyoneLabel:'👥 全員：',imposterLabel:'🔴 インポスター：',
   },
@@ -402,10 +408,10 @@ const I18N={
     hSub:'Find the impostor by listening to music!',hBadge:'✅ Free · 4–10 players',
     hNameLabel:'Your Name',hNamePh:'Enter your nickname...',
     hCreate:'🏠 Create Room',hCreating:'Creating...',
-    hOr:'or',hJoinLabel:'Join Room',hCodePh:'------',
-    hJoin:'➡️ Join',hJoining:'Joining...',hFooter:'Share the code with friends and play together!',
+    hOr:'or',hJoinLabel:'Join Room',hCodePh:'----',
+    hJoin:'➡️ Join',hJoining:'Joining...',hJoinNameLabel:'Name',hJoinCodeLabel:'Room Code (4 digits)',hFooter:'Share the code with friends and play together!',
     lCodeLabel:'Room Code',lCodeHint:'Share this code with your friends',
-    lPlayersLabel:'Players',lTrackLabel:'🎵 Select Music Set',
+    lPlayersLabel:'Players',lTrackLabel:'🎵 Select Music Set',lRandomLabel:'Track set chosen randomly at game start!',lRandomSub:'One of 10 genres picked at random each round',
     lStart:'🎵 Start Game!',lStarting:'Starting...',
     lWait:'Waiting for the host to start the game 🎵',lBack:'← Back to Home',
     cdTop:'Everyone listen together!',cdReady:'Get ready...',cdAlmost:'Almost...',cdGo:'Here we go!',cdPlay:'Play!',
@@ -419,7 +425,7 @@ const I18N={
     rWinBig:'Correct! Everyone wins!',rLoseBig:'Fooled! The Impostor wins!',
     rWinSub:(n)=>`${n} got the most votes and was the real Impostor!`,
     rLoseSub:(n)=>`Most voted: ${n} was innocent… The real Impostor was someone else!`,
-    youSuffix:' (You)',errName:'Please enter your name',errCode:'Please enter the 6-digit code',
+    youSuffix:' (You)',errName:'Please enter your name',errCode:'Please enter the 4-digit code',
     errNoRoom:'Room not found',errStarted:'Game has already started',errPfx:'Error: ',
     everyoneLabel:'👥 Everyone: ',imposterLabel:'🔴 Impostor: ',
   }
@@ -444,7 +450,7 @@ function applyLang(){
   set('cd-top','cdTop');
   set('p-hint','pHint');
   set('v-title','vTitle');set('v-sub','vSub');
-  set('r-imp-label','rImpLabel');set('r-votes-label','rVotesLabel');set('r-again','rAgain');
+  set('r-imp-label','rImpLabel');set('r-votes-label','rVotesLabel');set('r-again','rAgain');set('l-random-label','lRandomLabel');set('l-random-sub','lRandomSub');set('h-join-name-label','hJoinNameLabel');set('h-join-name','hNamePh','placeholder');set('h-join-code-label','hJoinCodeLabel');
   const cb=document.getElementById('h-create');if(cb&&!cb.disabled)cb.textContent=L('hCreate');
   const jb=document.getElementById('h-join');if(jb&&!jb.disabled)jb.textContent=L('hJoin');
   const sb2=document.getElementById('l-start');if(sb2&&!sb2.disabled)sb2.textContent=L('lStart');
@@ -489,7 +495,7 @@ const TRACKS=[
 /* ============ STATE ============ */
 const EMOJIS=['🐶','🦊','🐱','🐼','🐨','🐯','🦁','🐸','🐧','🦋'];
 function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2);}
-function rndRoom(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');}
+function rndRoom(){return String(Math.floor(1000+Math.random()*9000));}
 
 let G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0};
 
@@ -534,10 +540,11 @@ async function doCreate(){
 }
 
 async function doJoin(){
-  const name=document.getElementById('h-name').value.trim();
-  const code=document.getElementById('h-code').value.trim().toUpperCase();
+  const joinNameEl=document.getElementById('h-join-name');
+  const name=(joinNameEl?joinNameEl.value.trim():'')||document.getElementById('h-name').value.trim();
+  const code=document.getElementById('h-code').value.trim();
   if(!name){showErr(L('errName'));return;}
-  if(code.length!==6){showErr(L('errCode'));return;}
+  if(code.length!==4){showErr(L('errCode'));return;}
   setBtn('h-join',false,L('hJoining'));
   try{
     const {data:room,error:re}=await sb.from('rooms').select().eq('room_code',code).single();
@@ -590,21 +597,51 @@ function pickTrack(i){
 }
 
 /* ============ REALTIME ============ */
+let G_pollTimer=null;
+let G_lastStatus='waiting';
+
 function subscribeRoom(){
   if(G.channel)sb.removeChannel(G.channel);
+  G_lastStatus='waiting';
+
+  // Realtimeチャンネル
   G.channel=sb.channel('room:'+G.roomDbId)
     .on('postgres_changes',{event:'*',schema:'public',table:'rooms',filter:`id=eq.${G.roomDbId}`},async p=>{
       const s=p.new?.status;
-      if(s==='playing'){
-        const {data:r}=await sb.from('rooms').select('track_set_id').eq('id',G.roomDbId).single();
-        if(r)G.selTrack=TRACKS.find(tr=>tr.id===r.track_set_id)||TRACKS[0];
-        await fetchMembers();applyMyTrack();startCountdown();
-      }
-      if(s==='voting'){await fetchMembers();showVoting();}
-      if(s==='result'){await fetchMembers();showResult();}
+      if(s&&s!==G_lastStatus){G_lastStatus=s;await handleStatusChange(s);}
     })
-    .on('postgres_changes',{event:'*',schema:'public',table:'room_members',filter:`room_id=eq.${G.roomDbId}`},async()=>{await fetchMembers();})
+    .on('postgres_changes',{event:'*',schema:'public',table:'room_members'},async()=>{
+      await fetchMembers();
+    })
     .subscribe();
+
+  // ポーリング（3秒ごと）でメンバー更新＆ステータス監視
+  if(G_pollTimer)clearInterval(G_pollTimer);
+  G_pollTimer=setInterval(async()=>{
+    if(!G.roomDbId)return;
+    await fetchMembers();
+    const {data:r}=await sb.from('rooms').select('status,track_set_id').eq('id',G.roomDbId).single();
+    if(r&&r.status!==G_lastStatus){G_lastStatus=r.status;await handleStatusChange(r.status,r.track_set_id);}
+  },3000);
+}
+
+async function handleStatusChange(status, trackSetId){
+  if(status==='playing'){
+    const {data:r}=await sb.from('rooms').select('track_set_id').eq('id',G.roomDbId).single();
+    const tid=trackSetId||r?.track_set_id;
+    if(tid)G.selTrack=TRACKS.find(tr=>tr.id===tid)||TRACKS[0];
+    await fetchMembers();applyMyTrack();
+    if(G_pollTimer){clearInterval(G_pollTimer);G_pollTimer=null;}
+    startCountdown();
+  }
+  if(status==='voting'){
+    if(G_pollTimer){clearInterval(G_pollTimer);G_pollTimer=null;}
+    await fetchMembers();showVoting();
+  }
+  if(status==='result'){
+    if(G_pollTimer){clearInterval(G_pollTimer);G_pollTimer=null;}
+    await fetchMembers();showResult();
+  }
 }
 
 /* ============ START ============ */
@@ -612,8 +649,11 @@ async function doStart(){
   setBtn('l-start',false,L('lStarting'));
   try{
     await fetchMembers();
+    // ランダムで曲セット選択
+    const randomTrack=TRACKS[Math.floor(Math.random()*TRACKS.length)];
+    G.selTrack=randomTrack;
     const impIdx=Math.floor(Math.random()*G.members.length);
-    const ts=G.selTrack;
+    const ts=randomTrack;
     for(let i=0;i<G.members.length;i++){
       const isImp=i===impIdx;
       await sb.from('room_members').update({is_imposter:isImp,assigned_track_id:isImp?ts.id+'_imposter':ts.id+'_normal'}).eq('id',G.members[i].memberId);
@@ -747,9 +787,10 @@ async function showResult(){
 /* ============ HOME ============ */
 function goHome(){
   stopMusic();
+  if(G_pollTimer){clearInterval(G_pollTimer);G_pollTimer=null;}
   if(G.channel){sb.removeChannel(G.channel);}
   G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0};
-  document.getElementById('h-name').value='';
+  document.getElementById('h-name').value='';const jn=document.getElementById('h-join-name');if(jn)jn.value='';
   document.getElementById('h-code').value='';
   show('s-home');
 }
