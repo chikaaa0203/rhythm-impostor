@@ -516,7 +516,7 @@ async function fetchMembers(){
     const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
     const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
     const headers={'apikey':key,'Authorization':'Bearer '+key};
-    const mRes=await fetch(base+'/room_members?select=id,user_id,is_imposter,assigned_track_id,vote_target_user_id,users(id,name,icon_url)&room_id=eq.'+G.roomDbId,{headers});
+    const mRes=await fetch(base+'/room_members?select=id,user_id,is_imposter,assigned_track_id,vote_target_user_id,users!room_members_user_id_fkey(id,name,icon_url)&room_id=eq.'+G.roomDbId,{headers});
     const members=await mRes.json();
     const rRes=await fetch(base+'/rooms?select=host_id,status,track_set_id&id=eq.'+G.roomDbId,{headers});
     const rooms=await rRes.json();
@@ -633,7 +633,7 @@ async function poll(){
     const headers={'apikey':key,'Authorization':'Bearer '+key};
 
     // メンバー取得
-    const mRes=await fetch(base+'/room_members?select=id,user_id,is_imposter,assigned_track_id,vote_target_user_id,users(id,name,icon_url)&room_id=eq.'+G.roomDbId,{headers});
+    const mRes=await fetch(base+'/room_members?select=id,user_id,is_imposter,assigned_track_id,vote_target_user_id,users!room_members_user_id_fkey(id,name,icon_url)&room_id=eq.'+G.roomDbId,{headers});
     const members=await mRes.json();
 
     // ルーム取得
