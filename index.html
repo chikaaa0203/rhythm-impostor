@@ -310,7 +310,7 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
         <div class="beat-grid" id="p-beats"></div>
       </div>
       <div class="hint-card" id="p-hint">
-        周りの人のリズム・テンポ・ノリを感じてみよう。<strong>明らかに違う</strong>と感じる人がいればインポスターかも？
+        みんな違う曲を聴いているかも？自分の音楽が<strong>みんなと違う</strong>と感じたら、あなたがインポスターかも！周りをよく観察して…
       </div>
       <div style="text-align:center;margin-top:10px;">
         <span style="font-size:13px;color:var(--text3);">残り時間</span>
@@ -420,7 +420,594 @@ const I18N={
     lStart:'🎵 Start Game!',lStarting:'Starting...',
     lWait:'Waiting for the host to start the game 🎵',lBack:'← Back to Home',
     cdTop:'Everyone listen together!',cdReady:'Get ready...',cdAlmost:'Almost...',cdGo:'Here we go!',cdPlay:'Play!',
-    pHint:'Feel the rhythm, tempo, and groove around you. If someone sounds <strong>clearly different</strong>, they might be the impostor!',
+    pHint:'Everyone might be hearing something different! If your music feels <strong>out of place</strong>, you might be the Impostor! Observe everyone carefully…',
+    pDone:'✅ Done Listening!',pWait:'⏳ Waiting for others...',
+    roleNormal:'🔵 Regular Player',roleImp:"🔴 You are the Impostor! Don't get caught!",
+    vTitle:'🕵️ Who is the Impostor?',vSub:'Tap to select and vote!',
+    vBtn:'🗳️ Vote for this person!',vVoting:'⏳ Counting...',vVoted:'✅ Voted! Counting...',
+    rImpLabel:'The Impostor was…',rVotesLabel:'Vote Results',rAgain:'🔄 Play Again',
+    rWin:'VICTORY',rLose:'DEFEAT',rCaught:'Impostor Caught!',rEscaped:'Impostor Escaped!',
+    rWinBig:'Correct! Everyone wins!',rLoseBig:'Fooled! The Impostor wins!',
+    rWinSub:(n)=>`${n} got the most votes and was the real Impostor!`,
+    rLoseSub:(n)=>`Most voted: ${n} was innocent… The real Impostor was someone else!`,
+    youSuffix:' (You)',errName:'Please enter your name',errCode:'Please enter the 4-digit code',
+    errNoRoom:'Room not found',errStarted:'Game has already started',errPfx:'Error: ',
+    everyoneLabel:'👥 Everyone: ',imposterLabel:'🔴 Impostor: ',
+  }
+};
+let lang='ja';
+function L(k,...a){const v=I18N[lang][k];return typeof v==='function'?v(...a):(v||k);}
+
+function setLang(l){
+  lang=l;
+  document.getElementById('btn-ja').className=l==='ja'?'active':'';
+  document.getElementById('btn-en').className=l==='en'?'active':'';
+  applyLang();
+}
+function applyLang(){
+  const set=(id,k,attr)=>{const el=document.getElementById(id);if(!el)return;if(attr)el[attr]=L(k);else el.innerHTML=L(k);};
+  set('h-sub','hSub');set('h-badge','hBadge');set('h-name-label','hNameLabel');
+  set('h-name','hNamePh','placeholder');set('h-or','hOr');
+  set('h-join-label','hJoinLabel');set('h-footer','hFooter');
+  set('l-code-label','lCodeLabel');set('l-code-hint','lCodeHint');
+  set('l-players-label','lPlayersLabel');set('l-track-label','lTrackLabel');
+  set('l-back','lBack');
+  set('cd-top','cdTop');
+  set('p-hint','pHint');
+  set('v-title','vTitle');set('v-sub','vSub');
+  set('r-imp-label','rImpLabel');set('r-votes-label','rVotesLabel');set('r-again','rAgain');set('l-random-label','lRandomLabel');set('l-random-sub','lRandomSub');set('h-join-name-label','hJoinNameLabel');set('h-join-name','hNamePh','placeholder');set('h-join-code-label','hJoinCodeLabel');
+  const cb=document.getElementById('h-create');if(cb&&!cb.disabled)cb.textContent=L('hCreate');
+  const jb=document.getElementById('h-join');if(jb&&!jb.disabled)jb.textContent=L('hJoin');
+  const sb2=document.getElementById('l-start');if(sb2&&!sb2.disabled)sb2.textContent=L('lStart');
+  const vb=document.getElementById('v-btn');if(vb&&!vb.disabled)vb.textContent=L('vBtn');
+  renderTrackOpts();
+}
+
+/* ============ TRACK SETS ============ */
+const TRACKS=[
+  // ① スウィングジャズ(BPM85) vs テクノ(BPM155) - 差70BPM
+  {id:'jazz_techno',name:'🎷 Jazz vs Techno',nl:'ゆったりスウィングジャズ',il:'爆速テクノ',nlEn:'Slow Swing Jazz',ilEn:'Fast Techno',
+    normal:{icon:'🎷',name:'Swing Jazz',bpm:85,swing:0.67,
+      kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      hihat:[1,0,1,1,1,0,1,0,1,0,1,1,1,0,1,0],
+      bassNote:[55,0,0,0,55,0,62,0,55,0,0,0,58,0,0,0],
+      melody:[69,0,0,72,0,74,0,72,69,0,0,67,0,65,0,67]},
+    imposter:{icon:'⚡',name:'Techno',bpm:155,swing:0.5,
+      kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+      hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      bassNote:[36,0,36,0,36,36,0,0,36,0,36,0,36,36,0,0],
+      melody:[84,0,84,87,0,84,0,0,84,0,84,87,84,0,0,0]}},
+  // ② ワルツ3拍子(BPM80) vs ハードロック(BPM150) - 拍子も速さも違う
+  {id:'waltz_hardrock',name:'🎻 ワルツ vs ハードロック',nl:'優雅なワルツ（3拍子・ゆっくり）',il:'ハードロック（4拍子・激速）',nlEn:'Elegant Waltz (3/4 slow)',ilEn:'Hard Rock (4/4 fast)',
+    normal:{icon:'🎻',name:'Waltz',bpm:80,swing:0.5,steps:12,
+      kick:[1,0,0,0,0,0,1,0,0,0,0,0],snare:[0,0,0,1,0,0,0,0,0,1,0,0],
+      hihat:[1,0,1,1,0,1,1,0,1,1,0,1],
+      bassNote:[48,0,0,55,0,0,48,0,0,53,0,0],
+      melody:[72,0,74,76,0,0,72,0,69,67,0,0]},
+    imposter:{icon:'🎸',name:'Hard Rock',bpm:150,swing:0.5,
+      kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+      bassNote:[33,33,0,33,0,0,33,0,33,33,0,33,0,0,33,0],
+      melody:[57,0,57,60,0,0,60,0,57,0,57,60,58,0,0,0]}},
+  // ③ ボサノバ(BPM75) vs ドラムンベース(BPM160) - 差85BPM
+  {id:'bossa_dnb',name:'🌴 ボサノバ vs D&B',nl:'ゆったりボサノバ',il:'爆速ドラムンベース',nlEn:'Relaxed Bossa Nova',ilEn:'Drum & Bass (very fast)',
+    normal:{icon:'🌴',name:'Bossa Nova',bpm:75,swing:0.5,
+      kick:[1,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0],snare:[0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1],
+      hihat:[1,0,1,0,1,1,0,1,1,0,1,0,1,0,0,1],
+      bassNote:[45,0,0,52,0,0,50,0,45,0,0,52,0,0,47,0],
+      melody:[69,0,72,0,74,72,0,0,69,0,67,0,65,67,0,0]},
+    imposter:{icon:'🥁',name:'Drum & Bass',bpm:160,swing:0.5,
+      kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      bassNote:[36,0,36,36,0,36,0,0,36,0,36,36,0,36,0,0],
+      melody:[72,0,72,0,75,0,72,0,72,0,75,75,0,72,0,0]}},
+  // ④ HipHop(BPM82) vs サンバ(BPM145) - 差63BPM
+  {id:'hiphop_samba',name:'🎤 Hip Hop vs サンバ',nl:'重いHip Hop（ゆっくり）',il:'激しいサンバ（超速）',nlEn:'Heavy Hip Hop (slow)',ilEn:'Fast Samba (very fast)',
+    normal:{icon:'🎤',name:'Hip Hop',bpm:82,swing:0.62,
+      kick:[1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],
+      hihat:[1,1,0,1,1,1,0,1,1,1,0,1,1,0,0,1],
+      bassNote:[36,0,0,36,0,0,41,0,36,0,0,36,0,43,0,0],
+      melody:[60,0,60,0,63,0,0,60,58,0,0,58,60,0,0,0]},
+    imposter:{icon:'🇧🇷',name:'Samba',bpm:145,swing:0.5,
+      kick:[1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0],snare:[0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
+      hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      bassNote:[48,0,52,0,55,0,52,0,48,0,52,0,55,52,0,0],
+      melody:[67,0,69,0,71,0,72,0,71,0,69,0,67,0,65,0]}},
+  // ⑤ アイルランド民謡(BPM88) vs フラメンコ(BPM152)
+  {id:'irish_flamenco',name:'☘️ アイルランド vs フラメンコ',nl:'アイルランド民謡（6/8・ゆっくり）',il:'フラメンコ（激しく速い）',nlEn:'Irish Folk (slow 6/8)',ilEn:'Flamenco (fast & intense)',
+    normal:{icon:'☘️',name:'Irish Jig',bpm:88,swing:0.5,steps:12,
+      kick:[1,0,0,1,0,0,1,0,0,1,0,0],snare:[0,0,1,0,0,1,0,0,1,0,0,1],
+      hihat:[1,1,0,1,1,0,1,1,0,1,1,0],
+      bassNote:[52,0,0,55,0,0,52,0,0,48,0,0],
+      melody:[76,74,72,74,76,79,76,74,72,71,72,74]},
+    imposter:{icon:'💃',name:'Flamenco',bpm:152,swing:0.5,steps:12,
+      kick:[1,0,0,0,1,0,0,1,0,0,1,0],snare:[0,0,1,0,0,0,1,0,0,1,0,0],
+      hihat:[1,0,1,0,1,1,0,1,1,0,1,0],
+      bassNote:[40,0,0,43,0,0,45,0,0,43,0,0],
+      melody:[64,65,0,67,0,65,64,0,62,0,60,62]}},
+  // ⑥ レゲエ(BPM70) vs テクノ(BPM148) - 差78BPM
+  {id:'reggae_techno',name:'🏝️ レゲエ vs テクノ',nl:'超ゆったりレゲエ',il:'爆速テクノビート',nlEn:'Very slow Reggae',ilEn:'Fast Techno beat',
+    normal:{icon:'🏝️',name:'Reggae',bpm:70,swing:0.5,
+      kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      hihat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+      bassNote:[43,0,0,0,43,0,0,43,41,0,0,0,41,0,0,0],
+      melody:[0,0,67,0,0,67,0,0,0,65,0,0,65,0,0,0]},
+    imposter:{icon:'⚙️',name:'Techno',bpm:148,swing:0.5,
+      kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+      hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      bassNote:[36,0,36,0,36,36,0,0,36,0,36,0,36,36,0,0],
+      melody:[72,0,72,72,0,72,75,0,72,0,72,72,75,0,0,0]}},
+  // ⑦ 沖縄民謡(BPM76) vs マーチ(BPM145)
+  {id:'okinawa_march',name:'🌺 沖縄民謡 vs マーチ',nl:'ゆったり沖縄民謡',il:'キビキビ行進曲',nlEn:'Slow Okinawan Folk',ilEn:'Fast Military March',
+    normal:{icon:'🌺',name:'Okinawan',bpm:76,swing:0.5,
+      kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+      bassNote:[48,0,0,0,48,0,0,0,43,0,0,0,45,0,0,0],
+      melody:[60,0,64,0,65,0,67,0,71,0,67,0,65,0,64,0]},
+    imposter:{icon:'🥁',name:'March',bpm:145,swing:0.5,
+      kick:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],snare:[0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
+      hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+      bassNote:[48,0,48,0,43,0,43,0,48,0,48,0,43,0,43,0],
+      melody:[60,0,64,0,67,0,64,0,60,0,64,0,67,67,67,0]}},
+  // ⑧ R&B(BPM78) vs ポルカ(BPM155)
+  {id:'rnb_polka',name:'🎹 R&B vs ポルカ',nl:'ソウルフルR&B（ゆっくり）',il:'陽気ポルカ（超速）',nlEn:'Soulful R&B (slow)',ilEn:'Cheerful Polka (very fast)',
+    normal:{icon:'🎹',name:'R&B',bpm:78,swing:0.63,
+      kick:[1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0],
+      hihat:[1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,0],
+      bassNote:[48,0,0,48,0,0,48,0,46,0,0,46,0,0,46,0],
+      melody:[67,0,69,67,65,0,67,0,64,0,65,0,67,65,64,0]},
+    imposter:{icon:'🎊',name:'Polka',bpm:155,swing:0.5,steps:8,
+      kick:[1,0,1,0,1,0,1,0],snare:[0,1,0,1,0,1,0,1],
+      hihat:[1,1,1,1,1,1,1,1],
+      bassNote:[48,0,52,0,48,0,55,0],
+      melody:[72,74,76,77,76,74,72,0]}},
+  // ⑨ アフロビート(BPM85) vs ドラムンベース(BPM158)
+  {id:'afro_dnb',name:'🌍 アフロビート vs D&B',nl:'アフロビート（ゆっくり複雑）',il:'ドラムンベース（超高速）',nlEn:'Afrobeat (slow complex)',ilEn:'Drum & Bass (super fast)',
+    normal:{icon:'🌍',name:'Afrobeat',bpm:85,swing:0.55,
+      kick:[1,0,0,1,0,0,1,0,0,0,1,0,0,1,0,0],snare:[0,0,1,0,0,1,0,0,1,0,0,0,1,0,0,1],
+      hihat:[1,1,0,1,0,1,1,0,1,1,0,1,0,1,1,0],
+      bassNote:[48,0,0,48,0,0,50,0,0,48,0,0,48,0,0,46],
+      melody:[67,0,69,0,67,65,0,67,65,0,62,0,64,0,65,0]},
+    imposter:{icon:'💥',name:'Drum & Bass',bpm:158,swing:0.5,
+      kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      bassNote:[36,0,36,36,0,0,36,0,36,0,36,36,0,0,36,0],
+      melody:[72,72,0,75,0,72,0,0,72,72,0,75,72,0,0,0]}},
+  // ⑩ ファンク(BPM88) vs クラシック(BPM152) - ノリが全然違う
+  {id:'funk_classical',name:'🎺 ファンク vs クラシック',nl:'ゆったりファンク',il:'激速クラシック',nlEn:'Slow Funk groove',ilEn:'Fast Classical rush',
+    normal:{icon:'🎺',name:'Funk',bpm:88,swing:0.57,
+      kick:[1,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0],snare:[0,0,0,0,1,0,0,1,0,0,0,0,1,0,1,0],
+      hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      bassNote:[43,0,43,0,43,43,0,0,43,0,43,0,41,41,0,0],
+      melody:[67,0,67,70,67,0,65,0,67,0,67,70,65,0,64,0]},
+    imposter:{icon:'🎼',name:'Classical',bpm:152,swing:0.5,
+      kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      hihat:[1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0],
+      bassNote:[48,0,0,0,52,0,0,0,55,0,0,0,52,0,0,0],
+      melody:[72,71,72,74,76,74,72,71,69,0,72,74,76,79,0,0]}},
+];!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Music Imposter | Find the Impostor by Music!</title>
+<meta name="description" content="A party game where you find the impostor by listening to music! Free multiplayer game 4-10 players."/>
+<meta property="og:title" content="🎵 Music Imposter"/>
+<meta property="og:description" content="Find the impostor by listening to music!"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9885018064269523" crossorigin="anonymous"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0d0d12;
+  --bg2:#131318;
+  --surface:#1a1a22;
+  --surface2:#22222e;
+  --surface3:#2a2a3a;
+  --glass:rgba(255,255,255,0.04);
+  --glass-border:rgba(255,255,255,0.08);
+  --purple:#8b5cf6;
+  --purple2:#a78bfa;
+  --purple-glow:rgba(139,92,246,0.35);
+  --mint:#10d9a0;
+  --coral:#f97066;
+  --gold:#f59e0b;
+  --text:#f1f0ff;
+  --text2:#9491b4;
+  --text3:#5c5980;
+  --success:#10d9a0;
+  --danger:#f97066;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',system-ui,sans-serif;overflow-x:hidden;}
+
+/* ===== LAYOUT ===== */
+#wrap{display:flex;flex-direction:column;min-height:100vh;max-width:480px;margin:0 auto;position:relative;}
+.ad-banner{width:100%;height:50px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);flex-shrink:0;overflow:hidden;}
+#app{flex:1;display:flex;flex-direction:column;padding:0 16px;}
+
+/* ===== SCREENS ===== */
+.screen{display:none;flex-direction:column;flex:1;padding-bottom:16px;}
+.screen.active{display:flex;}
+
+/* ===== LANG SWITCHER ===== */
+#lang-sw{position:fixed;top:58px;right:12px;z-index:999;display:flex;gap:4px;}
+#lang-sw button{padding:4px 10px;border-radius:20px;border:1.5px solid var(--glass-border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;}
+#lang-sw button.active{background:var(--purple);border-color:var(--purple);color:#fff;}
+
+/* ===== HOME ===== */
+.hero{text-align:center;padding:32px 0 24px;}
+.hero-logo{width:90px;height:90px;border-radius:28px;background:linear-gradient(135deg,var(--purple),#6d28d9);display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 16px;box-shadow:0 8px 32px var(--purple-glow);}
+.hero-title{font-size:28px;font-weight:900;letter-spacing:-0.5px;background:linear-gradient(135deg,#fff 0%,var(--purple2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-sub{font-size:13px;color:var(--text2);margin-top:6px;}
+.hero-badge{display:inline-block;background:rgba(16,217,160,0.12);color:var(--mint);border:1px solid rgba(16,217,160,0.3);border-radius:20px;font-size:11px;font-weight:600;padding:4px 12px;margin-top:10px;}
+
+.section-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;}
+.glass-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:16px;padding:16px;margin-bottom:12px;backdrop-filter:blur(8px);}
+
+.input{width:100%;background:var(--surface2);border:1.5px solid var(--glass-border);border-radius:12px;padding:13px 16px;color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:border-color .15s;}
+.input:focus{border-color:var(--purple);}
+.input::placeholder{color:var(--text3);}
+
+.code-input{letter-spacing:8px;font-size:20px;font-weight:800;text-align:center;text-transform:uppercase;}
+
+.btn{width:100%;padding:15px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-primary{background:linear-gradient(135deg,var(--purple),#6d28d9);color:#fff;box-shadow:0 4px 20px var(--purple-glow);}
+.btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px var(--purple-glow);}
+.btn-ghost{background:transparent;color:var(--purple2);border:1.5px solid var(--purple);padding:14px;}
+.btn-ghost:hover:not(:disabled){background:rgba(139,92,246,0.1);}
+.btn-success{background:rgba(16,217,160,0.15);color:var(--mint);border:1.5px solid rgba(16,217,160,0.4);}
+.btn-success:hover:not(:disabled){background:rgba(16,217,160,0.25);}
+.btn-danger{background:rgba(249,112,102,0.15);color:var(--coral);border:1.5px solid rgba(249,112,102,0.4);}
+.btn-danger:hover:not(:disabled){background:rgba(249,112,102,0.25);}
+.btn-secondary{background:var(--surface2);color:var(--text2);border:1.5px solid var(--glass-border);}
+.btn:disabled{opacity:0.35;cursor:not-allowed;transform:none!important;}
+.btn+.btn{margin-top:10px;}
+
+.divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--text3);font-size:12px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--glass-border);}
+
+.err-box{background:rgba(249,112,102,0.1);border:1px solid rgba(249,112,102,0.3);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--coral);margin-bottom:10px;display:none;}
+
+/* ===== LOBBY ===== */
+.room-code-card{background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(109,40,217,0.08));border:1px solid rgba(139,92,246,0.3);border-radius:20px;padding:20px;text-align:center;margin:16px 0 12px;}
+.code-display{display:flex;gap:8px;justify-content:center;margin:10px 0 6px;}
+.code-char{width:42px;height:52px;background:var(--surface2);border:1.5px solid var(--glass-border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--purple2);font-family:monospace;}
+.code-hint{font-size:12px;color:var(--text3);}
+
+.player-list{display:flex;flex-direction:column;gap:8px;}
+.player-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;}
+.player-av{width:38px;height:38px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.player-name{flex:1;font-size:14px;font-weight:600;}
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;}
+.badge-host{background:rgba(139,92,246,0.2);color:var(--purple2);border:1px solid rgba(139,92,246,0.3);}
+.badge-you{background:rgba(16,217,160,0.15);color:var(--mint);border:1px solid rgba(16,217,160,0.3);}
+
+.track-grid{display:flex;flex-direction:column;gap:8px;}
+.track-card{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--glass);border:1.5px solid var(--glass-border);border-radius:14px;cursor:pointer;transition:all .15s;}
+.track-card:hover{border-color:rgba(139,92,246,0.5);}
+.track-card.sel{border-color:var(--purple);background:rgba(139,92,246,0.1);}
+.track-card input{accent-color:var(--purple);margin-top:3px;flex-shrink:0;}
+.track-card-info{flex:1;}
+.track-card-name{font-size:13px;font-weight:700;}
+.track-normal{font-size:11px;color:var(--text2);margin-top:3px;}
+.track-imp{font-size:11px;color:var(--coral);margin-top:1px;}
+
+/* ===== COUNTDOWN ===== */
+.cd-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.cd-label{font-size:15px;color:var(--text2);font-weight:600;}
+.cd-num{font-size:110px;font-weight:900;font-family:monospace;line-height:1;background:linear-gradient(135deg,var(--purple2),var(--mint));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cd-msg{font-size:15px;color:var(--text3);}
+
+/* ===== PLAYING ===== */
+.play-hero{text-align:center;padding:24px 16px 16px;}
+.vinyl-wrap{position:relative;width:140px;height:140px;margin:0 auto 16px;}
+.vinyl{width:140px;height:140px;border-radius:50%;background:conic-gradient(#1a1a22 0deg,#222 60deg,#111 120deg,#1a1a22 180deg,#111 240deg,#222 300deg,#1a1a22 360deg);border:3px solid var(--surface3);display:flex;align-items:center;justify-content:center;animation:spin 3s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.vinyl-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--bg2);border:2px solid var(--glass-border);z-index:1;}
+.vinyl-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:70px;height:70px;border-radius:50%;border:1px solid rgba(255,255,255,0.06);}
+.play-genre{font-size:18px;font-weight:800;margin-bottom:4px;}
+.role-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:12px;}
+.role-badge.normal{background:rgba(139,92,246,0.15);color:var(--purple2);border:1px solid rgba(139,92,246,0.3);}
+.role-badge.imposter{background:rgba(249,112,102,0.15);color:var(--coral);border:1px solid rgba(249,112,102,0.3);}
+
+.viz{display:flex;align-items:flex-end;justify-content:center;gap:3px;height:44px;margin:10px 0 6px;}
+.vbar{width:5px;border-radius:3px 3px 0 0;background:var(--purple);transition:height .1s;}
+
+.beat-grid{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin:8px 0;}
+.beat-dot{width:12px;height:12px;border-radius:50%;background:var(--surface3);transition:all .08s;}
+.beat-dot.on{background:var(--purple2);transform:scale(1.5);box-shadow:0 0 6px var(--purple-glow);}
+.beat-dot.strong{background:var(--mint);transform:scale(1.7);}
+
+.hint-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;padding:14px 16px;font-size:13px;color:var(--text2);line-height:1.65;}
+.hint-card strong{color:var(--text);}
+
+/* ===== VOTING ===== */
+.vote-header{text-align:center;padding:16px 0 12px;}
+.vote-title{font-size:20px;font-weight:800;}
+.vote-sub{font-size:13px;color:var(--text2);margin-top:4px;}
+.vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.vote-card{padding:18px 12px;background:var(--surface);border:2px solid transparent;border-radius:16px;text-align:center;cursor:pointer;transition:all .15s;}
+.vote-card:hover:not(.me){border-color:rgba(139,92,246,0.4);background:var(--surface2);}
+.vote-card.sel{border-color:var(--purple);background:rgba(139,92,246,0.12);box-shadow:0 0 0 4px var(--purple-glow);}
+.vote-card.me{opacity:0.4;cursor:default;}
+.vote-av{font-size:30px;margin-bottom:8px;}
+.vote-nm{font-size:13px;font-weight:700;}
+.vote-tag{font-size:11px;color:var(--text3);margin-top:3px;}
+
+/* ===== RESULT ===== */
+.result-header{text-align:center;padding:20px 0 16px;}
+.result-outcome{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
+.result-outcome.win{color:var(--mint);}
+.result-outcome.lose{color:var(--coral);}
+.result-big{font-size:32px;font-weight:900;}
+.result-status{display:inline-block;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;margin-top:8px;}
+.result-status.caught{background:rgba(16,217,160,0.15);color:var(--mint);border:1px solid rgba(16,217,160,0.3);}
+.result-status.escaped{background:rgba(249,112,102,0.15);color:var(--coral);border:1px solid rgba(249,112,102,0.3);}
+
+.imp-reveal{text-align:center;padding:16px;}
+.imp-av{font-size:48px;}
+.imp-name{font-size:18px;font-weight:800;margin-top:8px;}
+.imp-track{font-size:12px;color:var(--coral);margin-top:4px;}
+
+.result-list{display:flex;flex-direction:column;gap:8px;}
+.result-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;}
+.result-row.imp-row{border-color:rgba(249,112,102,0.4);background:rgba(249,112,102,0.07);}
+.result-row.top-row{border-color:rgba(245,158,11,0.4);}
+.res-av{font-size:22px;}
+.res-info{flex:1;}
+.res-name{font-size:13px;font-weight:700;}
+.res-track{font-size:11px;color:var(--text3);margin-top:1px;}
+.res-votes{font-size:13px;font-weight:700;color:var(--text2);}
+
+/* ===== PHASE DOTS ===== */
+.phase-dots{display:flex;gap:6px;justify-content:center;padding:10px 0 16px;}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--surface3);}
+.pdot.done{background:var(--purple);}
+.pdot.now{background:var(--purple2);box-shadow:0 0 8px var(--purple-glow);}
+
+/* ===== MISC ===== */
+.spacer{flex:1;}
+.spin-icon{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.25);border-top-color:#fff;border-radius:50%;animation:spinA .7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spinA{to{transform:rotate(360deg);}}
+.pulsing{animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.section-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.count-chip{font-size:12px;font-weight:700;color:var(--purple2);}
+
+@media(max-width:375px){
+  .code-char{width:36px;height:46px;font-size:17px;}
+  .cd-num{font-size:88px;}
+  .vote-av{font-size:26px;}
+  .result-big{font-size:26px;}
+}
+</style>
+</head>
+<body>
+
+<div id="wrap">
+  <!-- TOP AD -->
+  <div class="ad-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px"
+      data-ad-client="ca-pub-9885018064269523" data-ad-slot="YOUR_AD_SLOT_TOP"></ins>
+    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+  </div>
+
+  <!-- LANG SWITCHER -->
+  <div id="lang-sw">
+    <button id="btn-ja" class="active" onclick="setLang('ja')">🇯🇵 JP</button>
+    <button id="btn-en" onclick="setLang('en')">🇺🇸 EN</button>
+  </div>
+
+  <div id="app">
+
+    <!-- HOME -->
+    <div id="s-home" class="screen active">
+      <div class="hero">
+        <div class="hero-logo">🎧</div>
+        <div class="hero-title">Music Imposter</div>
+        <div class="hero-sub" id="h-sub">リズムに乗ってインポスターを見つけ出せ！</div>
+        <div class="hero-badge" id="h-badge">✅ 無料 · 3〜10人でプレイ</div>
+      </div>
+
+      <div class="section-label" id="h-name-label">あなたの名前</div>
+      <div class="glass-card">
+        <input class="input" id="h-name" placeholder="ニックネームを入力..." maxlength="12"/>
+      </div>
+
+      <div class="err-box" id="h-err"></div>
+
+      <button class="btn btn-primary" id="h-create" onclick="doCreate()">🏠 ルームを作成する</button>
+
+      <div class="divider" id="h-or">または</div>
+
+      <div class="section-label" id="h-join-label">ルームに参加</div>
+      <div class="glass-card">
+        <div style="margin-bottom:10px;">
+          <div class="section-label" id="h-join-name-label" style="margin-bottom:6px;">名前</div>
+          <input class="input" id="h-join-name" placeholder="ニックネームを入力..." maxlength="12"/>
+        </div>
+        <div class="section-label" id="h-join-code-label" style="margin-bottom:6px;">ルームコード（4桁）</div>
+        <input class="input code-input" id="h-code" placeholder="----" maxlength="4" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
+      </div>
+      <button class="btn btn-ghost" id="h-join" onclick="doJoin()">➡️ 参加する</button>
+
+      <div class="spacer"></div>
+      <div style="text-align:center;font-size:12px;color:var(--text3);padding:12px 0;" id="h-footer">友達のスマホで同じコードを入力して参加！</div>
+    </div>
+
+    <!-- LOBBY -->
+    <div id="s-lobby" class="screen">
+      <div class="phase-dots"><div class="pdot now"></div><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div></div>
+
+      <div class="room-code-card">
+        <div class="section-label" id="l-code-label">ルームコード</div>
+        <div class="code-display" id="l-code-chars"></div>
+        <div class="code-hint" id="l-code-hint">このコードを友達に送ってね</div>
+      </div>
+
+      <div class="glass-card">
+        <div class="section-row">
+          <div class="section-label" id="l-players-label">参加者</div>
+          <div class="count-chip" id="l-count">0人</div>
+        </div>
+        <div class="player-list" id="l-members"></div>
+      </div>
+
+      <div id="l-host-area" style="display:none;">
+        <div class="glass-card" style="text-align:center;padding:16px;">
+          <div style="font-size:32px;margin-bottom:8px;">🎲</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);" id="l-random-label">曲セットはスタート時にランダム選択！</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;" id="l-random-sub">10種類のジャンルからランダムで出題されます</div>
+        </div>
+        <button class="btn btn-primary" id="l-start" onclick="doStart()" disabled>🎵 ゲームスタート！</button>
+      </div>
+
+      <div id="l-guest-area" style="display:none;text-align:center;padding:24px;color:var(--text3);font-size:14px;font-weight:500;" class="pulsing" id="l-wait-msg">
+        ホストがゲームを開始するまで待ってね 🎵
+      </div>
+
+      <div class="spacer"></div>
+      <button class="btn btn-secondary" id="l-back" onclick="goHome()" style="margin-top:12px;">← ホームに戻る</button>
+    </div>
+
+    <!-- COUNTDOWN -->
+    <div id="s-countdown" class="screen">
+      <div class="phase-dots"><div class="pdot done"></div><div class="pdot now"></div><div class="pdot"></div><div class="pdot"></div></div>
+      <div class="cd-wrap">
+        <div class="cd-label" id="cd-top">全員で一緒に聴こう！</div>
+        <div class="cd-num" id="cd-num">3</div>
+        <div class="cd-msg" id="cd-msg">準備して...</div>
+        <button id="cd-unlock" onclick="unlockAudio()" style="display:none;padding:12px 24px;background:var(--purple);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;">🔊 タップして音を有効化</button>
+      </div>
+    </div>
+
+    <!-- PLAYING -->
+    <div id="s-playing" class="screen">
+      <div class="phase-dots"><div class="pdot done"></div><div class="pdot done"></div><div class="pdot now"></div><div class="pdot"></div></div>
+      <div class="play-hero">
+        <div class="vinyl-wrap">
+          <div class="vinyl" id="p-vinyl">
+            <div class="vinyl-ring"></div>
+          </div>
+          <div class="vinyl-center" id="p-icon">🎷</div>
+        </div>
+        <div class="play-genre" id="p-name">---</div>
+        <div class="role-badge normal" id="p-role">🔵 一般プレイヤー</div>
+        <div class="viz" id="p-viz"></div>
+        <div class="beat-grid" id="p-beats"></div>
+      </div>
+      <div class="hint-card" id="p-hint">
+        みんな違う曲を聴いているかも？自分の音楽が<strong>みんなと違う</strong>と感じたら、あなたがインポスターかも！周りをよく観察して…
+      </div>
+      <div style="text-align:center;margin-top:10px;">
+        <span style="font-size:13px;color:var(--text3);">残り時間</span>
+        <div id="p-timer" style="font-size:36px;font-weight:900;color:var(--purple2);font-family:monospace;line-height:1.2;">15</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-success" id="p-done" onclick="doDone()" style="margin-top:12px;">✅ 聞き終わった！</button>
+    </div>
+
+    <!-- VOTING -->
+    <div id="s-voting" class="screen">
+      <div class="phase-dots"><div class="pdot done"></div><div class="pdot done"></div><div class="pdot done"></div><div class="pdot now"></div></div>
+      <div class="vote-header">
+        <div class="vote-title" id="v-title">🕵️ 誰がインポスター？</div>
+        <div class="vote-sub" id="v-sub">タップして選んで投票！</div>
+      </div>
+      <div class="vote-grid" id="v-grid"></div>
+      <button class="btn btn-danger" id="v-btn" onclick="doVote()" disabled>🗳️ この人に投票！</button>
+    </div>
+
+    <!-- RESULT -->
+    <div id="s-result" class="screen">
+      <div class="phase-dots"><div class="pdot done"></div><div class="pdot done"></div><div class="pdot done"></div><div class="pdot done"></div></div>
+      <div class="result-header">
+        <div class="result-outcome" id="r-outcome">VICTORY</div>
+        <div class="result-big" id="r-big">正解！みんなの勝ち！</div>
+        <div class="result-status caught" id="r-status">Impostor Caught!</div>
+      </div>
+
+      <div class="glass-card">
+        <div class="section-label" id="r-imp-label">インポスターは…</div>
+        <div class="imp-reveal">
+          <div class="imp-av" id="r-imp-emoji">❓</div>
+          <div class="imp-name" id="r-imp-name">---</div>
+          <div class="imp-track">🎵 <span id="r-imp-track">---</span></div>
+        </div>
+      </div>
+
+      <!-- Result Ad -->
+      <div style="margin-bottom:12px;text-align:center;">
+        <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px"
+          data-ad-client="ca-pub-9885018064269523" data-ad-slot="YOUR_AD_SLOT_RESULT"></ins>
+        <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+      </div>
+
+      <div class="glass-card">
+        <div class="section-label" id="r-votes-label">投票結果</div>
+        <div class="result-list" id="r-rows"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="goHome()" style="margin-top:4px;" id="r-again">🔄 もう一度あそぶ</button>
+      <div style="height:12px;"></div>
+    </div>
+
+  </div><!-- /app -->
+
+  <!-- BOTTOM AD -->
+  <div class="ad-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px"
+      data-ad-client="ca-pub-9885018064269523" data-ad-slot="YOUR_AD_SLOT_BOTTOM"></ins>
+    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+  </div>
+</div><!-- /wrap -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* ============ SUPABASE ============ */
+const SUPA_URL='https://orhtqozyagxipngaklsy.supabase.co';
+const SUPA_KEY='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
+
+/* ============ i18n ============ */
+const I18N={
+  ja:{
+    hSub:'リズムに乗ってインポスターを見つけ出せ！',hBadge:'✅ 無料 · 3〜10人でプレイ',
+    hNameLabel:'あなたの名前',hNamePh:'ニックネームを入力...',
+    hCreate:'🏠 ルームを作成する',hCreating:'作成中...',
+    hOr:'または',hJoinLabel:'ルームに参加',hCodePh:'----',
+    hJoin:'➡️ 参加する',hJoining:'参加中...',hJoinNameLabel:'名前',hJoinCodeLabel:'ルームコード（4桁）',hFooter:'友達のスマホで同じコードを入力して参加！',
+    lCodeLabel:'ルームコード',lCodeHint:'このコードを友達に送ってね',
+    lPlayersLabel:'参加者',lTrackLabel:'🎵 曲セットを選択',lRandomLabel:'曲セットはスタート時にランダム選択！',lRandomSub:'10種類のジャンルからランダムで出題されます',
+    lStart:'🎵 ゲームスタート！',lStarting:'スタート中...',
+    lWait:'ホストがゲームを開始するまで待ってね 🎵',lBack:'← ホームに戻る',
+    cdTop:'全員で一緒に聴こう！',cdReady:'準備して...',cdAlmost:'もうすぐ...',cdGo:'いくよ！',cdPlay:'再生スタート！',
+    pHint:'周りの人のリズム・テンポ・ノリを感じてみよう。<strong>明らかに違う</strong>と感じる人がいればインポスターかも？',
+    pDone:'✅ 聞き終わった！',pWait:'⏳ 他の人を待っています...',
+    roleNormal:'🔵 一般プレイヤー',roleImp:'🔴 インポスター！バレないように！',
+    vTitle:'🕵️ 誰がインポスター？',vSub:'タップして選んで投票！',
+    vBtn:'🗳️ この人に投票！',vVoting:'⏳ 集計中...',vVoted:'✅ 投票済み！集計中...',
+    rImpLabel:'インポスターは…',rVotesLabel:'投票結果',rAgain:'🔄 もう一度あそぶ',
+    rWin:'VICTORY',rLose:'DEFEAT',rCaught:'Impostor Caught!',rEscaped:'Impostor Escaped!',
+    rWinBig:'正解！みんなの勝ち！',rLoseBig:'騙された！インポスターの勝ち！',
+    rWinSub:(n)=>`${n} が最多票で、本当のインポスターでした！`,
+    rLoseSub:(n)=>`最多票の ${n} は無実… 本当のインポスターは別の人！`,
+    youSuffix:' (自分)',errName:'名前を入力してください',errCode:'4桁の数字を入力してください',
+    errNoRoom:'ルームが見つかりません',errStarted:'ゲームはすでに開始しています',errPfx:'エラー: ',
+    everyoneLabel:'👥 全員：',imposterLabel:'🔴 インポスター：',
+  },
+  en:{
+    hSub:'Find the impostor by listening to music!',hBadge:'✅ Free · 3–10 players',
+    hNameLabel:'Your Name',hNamePh:'Enter your nickname...',
+    hCreate:'🏠 Create Room',hCreating:'Creating...',
+    hOr:'or',hJoinLabel:'Join Room',hCodePh:'----',
+    hJoin:'➡️ Join',hJoining:'Joining...',hJoinNameLabel:'Name',hJoinCodeLabel:'Room Code (4 digits)',hFooter:'Share the code with friends and play together!',
+    lCodeLabel:'Room Code',lCodeHint:'Share this code with your friends',
+    lPlayersLabel:'Players',lTrackLabel:'🎵 Select Music Set',lRandomLabel:'Track set chosen randomly at game start!',lRandomSub:'One of 10 genres picked at random each round',
+    lStart:'🎵 Start Game!',lStarting:'Starting...',
+    lWait:'Waiting for the host to start the game 🎵',lBack:'← Back to Home',
+    cdTop:'Everyone listen together!',cdReady:'Get ready...',cdAlmost:'Almost...',cdGo:'Here we go!',cdPlay:'Play!',
+    pHint:'Everyone might be hearing something different! If your music feels <strong>out of place</strong>, you might be the Impostor! Observe everyone carefully…',
     pDone:'✅ Done Listening!',pWait:'⏳ Waiting for others...',
     roleNormal:'🔵 Regular Player',roleImp:"🔴 You are the Impostor! Don't get caught!",
     vTitle:'🕵️ Who is the Impostor?',vSub:'Tap to select and vote!',
@@ -780,10 +1367,11 @@ function startPlaying(){
   document.getElementById('p-icon').textContent=m.icon;
   document.getElementById('p-name').textContent=m.name;
   const roleEl=document.getElementById('p-role');
-  if(G.isImposter){roleEl.textContent=L('roleImp');roleEl.className='role-badge imposter';}
-  else{roleEl.textContent=L('roleNormal');roleEl.className='role-badge normal';}
+  // インポスターかどうかは非表示 - 全員同じ表示
+  roleEl.textContent='🎵 '+G.myMusic.name;
+  roleEl.className='role-badge normal';
   const vinyl=document.getElementById('p-vinyl');
-  vinyl.style.borderColor=G.isImposter?'var(--coral)':'var(--purple)';
+  vinyl.style.borderColor='var(--purple)'; // 全員同じ色
   const steps=m.steps||16;
   document.getElementById('p-beats').innerHTML=Array.from({length:steps},(_,i)=>`<div class="beat-dot" id="bd-${i}"></div>`).join('');
   document.getElementById('p-viz').innerHTML=Array.from({length:14},(_,i)=>`<div class="vbar" id="vb-${i}" style="height:4px;"></div>`).join('');
