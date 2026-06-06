@@ -306,7 +306,7 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
         <button onclick="tapToPlay()" style="margin-top:8px;padding:18px 48px;background:linear-gradient(135deg,var(--purple),#6d28d9);color:#fff;border:none;border-radius:16px;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 8px 32px var(--purple-glow);">
           ▶️ 再生する
         </button>
-        <div style="font-size:12px;color:var(--text3);margin-top:4px;" id="p-tap-timer-pre">15秒後に自動で投票へ</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px;" id="p-tap-timer-pre">1分後に自動で投票へ</div>
       </div>
 
       <div class="play-hero">
@@ -326,7 +326,7 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
       </div>
       <div style="text-align:center;margin-top:10px;">
         <span style="font-size:13px;color:var(--text3);">残り時間</span>
-        <div id="p-timer" style="font-size:36px;font-weight:900;color:var(--purple2);font-family:monospace;line-height:1.2;">15</div>
+        <div id="p-timer" style="font-size:36px;font-weight:900;color:var(--purple2);font-family:monospace;line-height:1.2;">60</div>
       </div>
       <div class="spacer"></div>
     </div>
@@ -719,8 +719,8 @@ async function doStart(){
       const isImp=i===impIdx;
       await fetch(base+'/room_members?id=eq.'+G.members[i].memberId,{method:'PATCH',headers:hdrs,body:JSON.stringify({is_imposter:isImp,assigned_track_id:isImp?ts.id+'_imposter':ts.id+'_normal',is_done:false,vote_target_user_id:null})});
     }
-    // play_at = 今から4秒後（カウントダウン3秒+バッファ1秒）
-    const playAt=new Date(Date.now()+4000).toISOString();
+    // play_at = 今から3.5秒後（カウントダウン3秒+バッファ0.5秒）
+    const playAt=new Date(Date.now()+3500).toISOString();
     await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({status:'playing',track_set_id:ts.id,play_at:playAt})});
   }catch(e){alert(L('errPfx')+e.message);setBtn('l-start',true,L('lStart'));}
 }
@@ -769,20 +769,25 @@ function startCountdown(playAtISO){
   const msgEl=document.getElementById('cd-msg');
 
   // play_atまでの残り時間を計算してカウントダウン表示
-  const playAt=playAtISO?new Date(playAtISO).getTime():Date.now()+4000;
+  const playAt=playAtISO?new Date(playAtISO).getTime():Date.now()+3500;
   G.playAt=playAt; // 後でplayMusicで使う
 
+  let started=false;
   function updateCountdown(){
     const remaining=playAt-Date.now();
     if(remaining<=0){
-      numEl.textContent='🎵';
-      msgEl.textContent=L('cdPlay');
-      startPlaying();
+      if(!started){
+        started=true;
+        numEl.textContent='🎵';
+        msgEl.textContent=L('cdPlay');
+        setTimeout(startPlaying,100);
+      }
       return;
     }
     const secs=Math.ceil(remaining/1000);
-    numEl.textContent=secs<=3?secs:'🎵';
-    msgEl.textContent=secs>3?L('cdReady'):secs===3?L('cdReady'):secs===2?L('cdAlmost'):L('cdGo');
+    if(secs>=3){numEl.textContent='3';msgEl.textContent=L('cdReady');}
+    else if(secs===2){numEl.textContent='2';msgEl.textContent=L('cdAlmost');}
+    else{numEl.textContent='1';msgEl.textContent=L('cdGo');}
     setTimeout(updateCountdown,100);
   }
   updateCountdown();
@@ -818,10 +823,10 @@ function startPlaying(){
     const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
     const hdrs={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=minimal'};
     await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({status:'voting'})});
-  },15000);
+  },60000);
 
   // 残り時間UI
-  let timeLeft=15;
+  let timeLeft=60;
   const timerEl=document.getElementById('p-timer');
   const preEl=document.getElementById('p-tap-timer-pre');
   if(timerEl)timerEl.textContent=timeLeft;
