@@ -1,1026 +1,569 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🎵 リズムインポスター | 音楽でインポスターを見つけろ！</title>
-  <meta name="description" content="音楽を聴いてインポスターを当てるパーティーゲーム！友達と一緒に遊べる無料ゲーム。"/>
-  <meta name="keywords" content="リズムゲーム, インポスター, パーティーゲーム, 音楽ゲーム, 無料ゲーム"/>
-  <meta property="og:title" content="🎵 リズムインポスター"/>
-  <meta property="og:description" content="音楽を聴いてインポスターを見つけるパーティーゲーム！"/>
-  <meta property="og:type" content="website"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Rhythm Impostor | Find the Impostor by Music!</title>
+<meta name="description" content="A party game where you find the impostor by listening to music! Free multiplayer game 4-10 players."/>
+<meta property="og:title" content="🎵 Rhythm Impostor"/>
+<meta property="og:description" content="Find the impostor by listening to music!"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9885018064269523" crossorigin="anonymous"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0d0d12;
+  --bg2:#131318;
+  --surface:#1a1a22;
+  --surface2:#22222e;
+  --surface3:#2a2a3a;
+  --glass:rgba(255,255,255,0.04);
+  --glass-border:rgba(255,255,255,0.08);
+  --purple:#8b5cf6;
+  --purple2:#a78bfa;
+  --purple-glow:rgba(139,92,246,0.35);
+  --mint:#10d9a0;
+  --coral:#f97066;
+  --gold:#f59e0b;
+  --text:#f1f0ff;
+  --text2:#9491b4;
+  --text3:#5c5980;
+  --success:#10d9a0;
+  --danger:#f97066;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',system-ui,sans-serif;overflow-x:hidden;}
 
-  <!-- ============================================================
-    Google AdSense
-    ▼ 下の YOUR_ADSENSE_PUBLISHER_ID を自分のIDに差し替えてください
-    　 例: ca-pub-1234567890123456
-    ▼ 子供向けサイトのため「ファミリーセーフ」設定を推奨
-    　 AdSenseダッシュボード → サイト → コンテンツ設定 →
-    　 「アダルトコンテンツのカテゴリを除外」をONに
-    ============================================================ -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9885018064269523" crossorigin="anonymous"></script>
+/* ===== LAYOUT ===== */
+#wrap{display:flex;flex-direction:column;min-height:100vh;max-width:480px;margin:0 auto;position:relative;}
+.ad-banner{width:100%;height:50px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);flex-shrink:0;overflow:hidden;}
+#app{flex:1;display:flex;flex-direction:column;padding:0 16px;}
 
-  <style>
-    :root {
-      --bg: #0a0a0f;
-      --surface: #13131a;
-      --surface2: #1e1e2a;
-      --surface3: #2a2a3a;
-      --border: rgba(255,255,255,0.08);
-      --border2: rgba(255,255,255,0.15);
-      --accent: #7c6ef4;
-      --accent2: #a78bfa;
-      --text: #f0effe;
-      --text2: #9896b8;
-      --text3: #6b698a;
-      --success: #34d399;
-      --danger: #f87171;
-      --warning: #fbbf24;
-      --green: #6ee7b7;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; }
+/* ===== SCREENS ===== */
+.screen{display:none;flex-direction:column;flex:1;padding-bottom:16px;}
+.screen.active{display:flex;}
 
-    /* ===== レイアウト ===== */
-    #layout {
-      display: grid;
-      grid-template-columns: 1fr minmax(320px, 480px) 1fr;
-      grid-template-rows: auto 1fr auto;
-      min-height: 100vh;
-      gap: 0;
-    }
-    #ad-left  { grid-column: 1; grid-row: 1 / 4; display: flex; flex-direction: column; align-items: center; padding: 80px 8px 20px; gap: 20px; }
-    #ad-right { grid-column: 3; grid-row: 1 / 4; display: flex; flex-direction: column; align-items: center; padding: 80px 8px 20px; gap: 20px; }
-    #main     { grid-column: 2; grid-row: 1 / 4; display: flex; flex-direction: column; min-height: 100vh; }
-    #ad-top    { grid-column: 2; grid-row: 1; }
-    #ad-bottom { padding: 16px; }
+/* ===== LANG SWITCHER ===== */
+#lang-sw{position:fixed;top:58px;right:12px;z-index:999;display:flex;gap:4px;}
+#lang-sw button{padding:4px 10px;border-radius:20px;border:1.5px solid var(--glass-border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;}
+#lang-sw button.active{background:var(--purple);border-color:var(--purple);color:#fff;}
 
-    /* ===== スマホ対応 ===== */
-    @media (max-width: 900px) {
-      #layout { grid-template-columns: 1fr; }
-      #ad-left, #ad-right { display: none; }
-      #main { grid-column: 1; }
-    }
+/* ===== HOME ===== */
+.hero{text-align:center;padding:32px 0 24px;}
+.hero-logo{width:90px;height:90px;border-radius:28px;background:linear-gradient(135deg,var(--purple),#6d28d9);display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 16px;box-shadow:0 8px 32px var(--purple-glow);}
+.hero-title{font-size:28px;font-weight:900;letter-spacing:-0.5px;background:linear-gradient(135deg,#fff 0%,var(--purple2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-sub{font-size:13px;color:var(--text2);margin-top:6px;}
+.hero-badge{display:inline-block;background:rgba(16,217,160,0.12);color:var(--mint);border:1px solid rgba(16,217,160,0.3);border-radius:20px;font-size:11px;font-weight:600;padding:4px 12px;margin-top:10px;}
 
-    /* スマホ全般 */
-    @media (max-width: 600px) {
-      #app { padding: 12px; }
+.section-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;}
+.glass-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:16px;padding:16px;margin-bottom:12px;backdrop-filter:blur(8px);}
 
-      /* ロゴ */
-      .logo { padding: 12px 0 4px; }
-      .logo-title { font-size: 22px; }
+.input{width:100%;background:var(--surface2);border:1.5px solid var(--glass-border);border-radius:12px;padding:13px 16px;color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:border-color .15s;}
+.input:focus{border-color:var(--purple);}
+.input::placeholder{color:var(--text3);}
 
-      /* 言語ボタンがコンテンツに被らないようトップ余白 */
-      #s-home .logo { margin-top: 36px; }
+.code-input{letter-spacing:8px;font-size:20px;font-weight:800;text-align:center;text-transform:uppercase;}
 
-      /* カード */
-      .card { padding: 14px; border-radius: 12px; margin-bottom: 10px; }
+.btn{width:100%;padding:15px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-primary{background:linear-gradient(135deg,var(--purple),#6d28d9);color:#fff;box-shadow:0 4px 20px var(--purple-glow);}
+.btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px var(--purple-glow);}
+.btn-ghost{background:transparent;color:var(--purple2);border:1.5px solid var(--purple);padding:14px;}
+.btn-ghost:hover:not(:disabled){background:rgba(139,92,246,0.1);}
+.btn-success{background:rgba(16,217,160,0.15);color:var(--mint);border:1.5px solid rgba(16,217,160,0.4);}
+.btn-success:hover:not(:disabled){background:rgba(16,217,160,0.25);}
+.btn-danger{background:rgba(249,112,102,0.15);color:var(--coral);border:1.5px solid rgba(249,112,102,0.4);}
+.btn-danger:hover:not(:disabled){background:rgba(249,112,102,0.25);}
+.btn-secondary{background:var(--surface2);color:var(--text2);border:1.5px solid var(--glass-border);}
+.btn:disabled{opacity:0.35;cursor:not-allowed;transform:none!important;}
+.btn+.btn{margin-top:10px;}
 
-      /* ボタン */
-      .btn { padding: 13px; font-size: 14px; border-radius: 10px; }
+.divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--text3);font-size:12px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--glass-border);}
 
-      /* ルームコード */
-      .room-code { padding: 14px; }
-      .room-code-num { font-size: 34px; letter-spacing: 5px; }
+.err-box{background:rgba(249,112,102,0.1);border:1px solid rgba(249,112,102,0.3);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--coral);margin-bottom:10px;display:none;}
 
-      /* カウントダウン */
-      .countdown-big { font-size: 90px; }
-      .countdown-sub { font-size: 14px; }
+/* ===== LOBBY ===== */
+.room-code-card{background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(109,40,217,0.08));border:1px solid rgba(139,92,246,0.3);border-radius:20px;padding:20px;text-align:center;margin:16px 0 12px;}
+.code-display{display:flex;gap:8px;justify-content:center;margin:10px 0 6px;}
+.code-char{width:42px;height:52px;background:var(--surface2);border:1.5px solid var(--glass-border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--purple2);font-family:monospace;}
+.code-hint{font-size:12px;color:var(--text3);}
 
-      /* プレイヤー */
-      .player-hero { padding: 18px 12px 14px; }
-      .player-genre-icon { font-size: 40px; }
-      .player-genre-name { font-size: 17px; }
-      .player-role { font-size: 12px; }
+.player-list{display:flex;flex-direction:column;gap:8px;}
+.player-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;}
+.player-av{width:38px;height:38px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.player-name{flex:1;font-size:14px;font-weight:600;}
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;}
+.badge-host{background:rgba(139,92,246,0.2);color:var(--purple2);border:1px solid rgba(139,92,246,0.3);}
+.badge-you{background:rgba(16,217,160,0.15);color:var(--mint);border:1px solid rgba(16,217,160,0.3);}
 
-      /* 投票グリッド：スマホでも2列維持しつつ余白調整 */
-      .vote-grid { gap: 8px; }
-      .vote-card { padding: 12px 8px; border-radius: 10px; }
-      .vote-emoji { font-size: 24px; margin-bottom: 4px; }
-      .vote-name { font-size: 12px; }
+.track-grid{display:flex;flex-direction:column;gap:8px;}
+.track-card{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--glass);border:1.5px solid var(--glass-border);border-radius:14px;cursor:pointer;transition:all .15s;}
+.track-card:hover{border-color:rgba(139,92,246,0.5);}
+.track-card.sel{border-color:var(--purple);background:rgba(139,92,246,0.1);}
+.track-card input{accent-color:var(--purple);margin-top:3px;flex-shrink:0;}
+.track-card-info{flex:1;}
+.track-card-name{font-size:13px;font-weight:700;}
+.track-normal{font-size:11px;color:var(--text2);margin-top:3px;}
+.track-imp{font-size:11px;color:var(--coral);margin-top:1px;}
 
-      /* 結果 */
-      .result-hero { padding: 16px 12px; }
-      .result-icon { font-size: 48px; }
-      .result-title { font-size: 20px; }
-      .result-sub { font-size: 13px; }
+/* ===== COUNTDOWN ===== */
+.cd-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.cd-label{font-size:15px;color:var(--text2);font-weight:600;}
+.cd-num{font-size:110px;font-weight:900;font-family:monospace;line-height:1;background:linear-gradient(135deg,var(--purple2),var(--mint));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cd-msg{font-size:15px;color:var(--text3);}
 
-      /* トラック選択 */
-      .track-opt { padding: 10px; gap: 8px; }
-      .track-opt-name { font-size: 13px; }
-      .track-opt-normal, .track-opt-imposter { font-size: 10px; }
+/* ===== PLAYING ===== */
+.play-hero{text-align:center;padding:24px 16px 16px;}
+.vinyl-wrap{position:relative;width:140px;height:140px;margin:0 auto 16px;}
+.vinyl{width:140px;height:140px;border-radius:50%;background:conic-gradient(#1a1a22 0deg,#222 60deg,#111 120deg,#1a1a22 180deg,#111 240deg,#222 300deg,#1a1a22 360deg);border:3px solid var(--surface3);display:flex;align-items:center;justify-content:center;animation:spin 3s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.vinyl-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--bg2);border:2px solid var(--glass-border);z-index:1;}
+.vinyl-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:70px;height:70px;border-radius:50%;border:1px solid rgba(255,255,255,0.06);}
+.play-genre{font-size:18px;font-weight:800;margin-bottom:4px;}
+.role-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:12px;}
+.role-badge.normal{background:rgba(139,92,246,0.15);color:var(--purple2);border:1px solid rgba(139,92,246,0.3);}
+.role-badge.imposter{background:rgba(249,112,102,0.15);color:var(--coral);border:1px solid rgba(249,112,102,0.3);}
 
-      /* ビート */
-      .beat-dot { width: 12px; height: 12px; }
-      .beat-grid { gap: 4px; }
+.viz{display:flex;align-items:flex-end;justify-content:center;gap:3px;height:44px;margin:10px 0 6px;}
+.vbar{width:5px;border-radius:3px 3px 0 0;background:var(--purple);transition:height .1s;}
 
-      /* ヒントボックス */
-      .hint-box { font-size: 12px; }
+.beat-grid{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin:8px 0;}
+.beat-dot{width:12px;height:12px;border-radius:50%;background:var(--surface3);transition:all .08s;}
+.beat-dot.on{background:var(--purple2);transform:scale(1.5);box-shadow:0 0 6px var(--purple-glow);}
+.beat-dot.strong{background:var(--mint);transform:scale(1.7);}
 
-      /* フェーズドット */
-      .phase-dots { padding: 4px 0 10px; }
+.hint-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;padding:14px 16px;font-size:13px;color:var(--text2);line-height:1.65;}
+.hint-card strong{color:var(--text);}
 
-      /* 広告トップ */
-      .ad-top-banner { height: 60px; }
+/* ===== VOTING ===== */
+.vote-header{text-align:center;padding:16px 0 12px;}
+.vote-title{font-size:20px;font-weight:800;}
+.vote-sub{font-size:13px;color:var(--text2);margin-top:4px;}
+.vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.vote-card{padding:18px 12px;background:var(--surface);border:2px solid transparent;border-radius:16px;text-align:center;cursor:pointer;transition:all .15s;}
+.vote-card:hover:not(.me){border-color:rgba(139,92,246,0.4);background:var(--surface2);}
+.vote-card.sel{border-color:var(--purple);background:rgba(139,92,246,0.12);box-shadow:0 0 0 4px var(--purple-glow);}
+.vote-card.me{opacity:0.4;cursor:default;}
+.vote-av{font-size:30px;margin-bottom:8px;}
+.vote-nm{font-size:13px;font-weight:700;}
+.vote-tag{font-size:11px;color:var(--text3);margin-top:3px;}
 
-      /* フッター */
-      #footer { font-size: 10px; padding: 12px; }
+/* ===== RESULT ===== */
+.result-header{text-align:center;padding:20px 0 16px;}
+.result-outcome{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
+.result-outcome.win{color:var(--mint);}
+.result-outcome.lose{color:var(--coral);}
+.result-big{font-size:32px;font-weight:900;}
+.result-status{display:inline-block;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;margin-top:8px;}
+.result-status.caught{background:rgba(16,217,160,0.15);color:var(--mint);border:1px solid rgba(16,217,160,0.3);}
+.result-status.escaped{background:rgba(249,112,102,0.15);color:var(--coral);border:1px solid rgba(249,112,102,0.3);}
 
-      /* 言語ボタン小さく */
-      #lang-switcher { top: 8px; right: 8px; gap: 4px; }
-      #lang-switcher button { padding: 4px 8px; font-size: 11px; }
-    }
+.imp-reveal{text-align:center;padding:16px;}
+.imp-av{font-size:48px;}
+.imp-name{font-size:18px;font-weight:800;margin-top:8px;}
+.imp-track{font-size:12px;color:var(--coral);margin-top:4px;}
 
-    /* 極小スマホ (iPhone SE等 375px以下) */
-    @media (max-width: 375px) {
-      .room-code-num { font-size: 28px; letter-spacing: 3px; }
-      .countdown-big { font-size: 72px; }
-      .vote-card { padding: 10px 6px; }
-      .vote-emoji { font-size: 20px; }
-      .vote-name { font-size: 11px; }
-      .card { padding: 12px; }
-    }
+.result-list{display:flex;flex-direction:column;gap:8px;}
+.result-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;}
+.result-row.imp-row{border-color:rgba(249,112,102,0.4);background:rgba(249,112,102,0.07);}
+.result-row.top-row{border-color:rgba(245,158,11,0.4);}
+.res-av{font-size:22px;}
+.res-info{flex:1;}
+.res-name{font-size:13px;font-weight:700;}
+.res-track{font-size:11px;color:var(--text3);margin-top:1px;}
+.res-votes{font-size:13px;font-weight:700;color:var(--text2);}
 
-    /* ===== 広告スタイル ===== */
-    .ad-unit {
-      background: var(--surface);
-      border: 1px dashed var(--border2);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text3);
-      font-size: 11px;
-      text-align: center;
-      overflow: hidden;
-    }
-    .ad-side-tall  { width: 160px; height: 600px; }
-    .ad-side-rect  { width: 160px; height: 250px; }
-    .ad-top-banner { width: 100%; height: 90px; }
-    .ad-bottom-banner { width: 100%; max-width: 728px; height: 90px; margin: 0 auto; }
+/* ===== PHASE DOTS ===== */
+.phase-dots{display:flex;gap:6px;justify-content:center;padding:10px 0 16px;}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--surface3);}
+.pdot.done{background:var(--purple);}
+.pdot.now{background:var(--purple2);box-shadow:0 0 8px var(--purple-glow);}
 
-    /* ===== ゲームUI ===== */
-    #app { max-width: 480px; width: 100%; margin: 0 auto; padding: 16px; flex: 1; display: flex; flex-direction: column; }
-    .screen { display: none; flex-direction: column; flex: 1; }
-    .screen.active { display: flex; }
+/* ===== MISC ===== */
+.spacer{flex:1;}
+.spin-icon{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.25);border-top-color:#fff;border-radius:50%;animation:spinA .7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spinA{to{transform:rotate(360deg);}}
+.pulsing{animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.section-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.count-chip{font-size:12px;font-weight:700;color:var(--purple2);}
 
-    .logo { text-align: center; padding: 20px 0 6px; }
-    .logo-title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-    .logo-badge { display: inline-block; background: rgba(52,211,153,0.15); color: var(--success); border: 1px solid rgba(52,211,153,0.3); border-radius: 4px; font-size: 11px; padding: 3px 8px; margin-top: 6px; }
-
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 12px; }
-    .card-title { font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
-
-    .btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
-    .btn-primary  { background: var(--accent); color: white; }
-    .btn-primary:hover:not(:disabled)  { background: var(--accent2); transform: translateY(-1px); }
-    .btn-secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
-    .btn-secondary:hover:not(:disabled) { background: var(--surface3); }
-    .btn-success { background: rgba(52,211,153,0.15); color: var(--success); border: 1px solid rgba(52,211,153,0.3); }
-    .btn-danger  { background: rgba(248,113,113,0.15); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
-    .btn + .btn { margin-top: 8px; }
-
-    .input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 14px; color: var(--text); font-size: 15px; outline: none; transition: border-color 0.15s; }
-    .input:focus { border-color: var(--accent); }
-
-    .room-code { text-align: center; padding: 20px; background: var(--surface2); border-radius: 12px; margin-bottom: 12px; }
-    .room-code-num { font-size: 44px; font-weight: 900; letter-spacing: 8px; color: var(--accent2); font-family: monospace; }
-    .room-code-label { font-size: 12px; color: var(--text3); margin-top: 4px; }
-
-    .members-list { display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
-    .member-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface2); border-radius: 10px; }
-    .member-emoji { font-size: 20px; }
-    .member-name { font-size: 14px; font-weight: 500; flex: 1; }
-    .badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; }
-    .badge-host { background: rgba(124,110,244,0.2); color: var(--accent2); }
-    .badge-you  { background: rgba(110,231,183,0.2); color: var(--green); }
-
-    .track-options { display: flex; flex-direction: column; gap: 8px; }
-    .track-opt { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 10px; border: 1.5px solid var(--border); cursor: pointer; transition: all 0.15s; }
-    .track-opt:hover { border-color: var(--accent); background: rgba(124,110,244,0.05); }
-    .track-opt.sel { border-color: var(--accent); background: rgba(124,110,244,0.1); }
-    .track-opt input { accent-color: var(--accent); margin-top: 2px; }
-    .track-opt-info { flex: 1; }
-    .track-opt-name { font-size: 14px; font-weight: 700; }
-    .track-opt-normal   { font-size: 11px; color: var(--text2); margin-top: 3px; }
-    .track-opt-imposter { font-size: 11px; color: var(--danger); margin-top: 1px; }
-
-    .phase-dots { display: flex; gap: 6px; justify-content: center; padding: 6px 0 14px; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--surface3); }
-    .dot.done { background: var(--accent); }
-    .dot.now  { background: var(--accent2); box-shadow: 0 0 8px rgba(124,110,244,0.5); }
-
-    .countdown-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
-    .countdown-big { font-size: 120px; font-weight: 900; color: var(--accent2); font-family: monospace; line-height: 1; }
-    .countdown-sub { font-size: 16px; color: var(--text2); }
-
-    .player-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
-    .player-hero { text-align: center; padding: 28px 16px 20px; }
-    .player-genre-icon { font-size: 52px; }
-    .player-genre-name { font-size: 20px; font-weight: 800; margin-top: 8px; }
-    .player-role { font-size: 13px; margin-top: 4px; }
-    .player-role.normal   { color: var(--accent2); }
-    .player-role.imposter { color: var(--danger); }
-
-    .visualizer { display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 48px; margin: 14px 0 6px; }
-    .vbar { border-radius: 2px 2px 0 0; width: 5px; background: var(--accent); opacity: 0.85; }
-
-    .beat-grid { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
-    .beat-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--surface3); transition: background 0.08s, transform 0.08s; }
-    .beat-dot.active { background: var(--accent2); transform: scale(1.4); }
-    .beat-dot.accent { background: var(--warning); }
-
-    .hint-box { font-size: 13px; color: var(--text2); line-height: 1.65; }
-    .hint-box strong { color: var(--text); }
-
-    .vote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-    .vote-card { padding: 16px 10px; background: var(--surface2); border: 2px solid transparent; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.15s; }
-    .vote-card:hover { border-color: var(--border2); }
-    .vote-card.sel { border-color: var(--accent); background: rgba(124,110,244,0.1); }
-    .vote-card.me  { opacity: 0.45; cursor: default; }
-    .vote-emoji { font-size: 28px; margin-bottom: 6px; }
-    .vote-name  { font-size: 13px; font-weight: 600; }
-
-    .result-hero { text-align: center; padding: 24px 16px; }
-    .result-icon  { font-size: 58px; }
-    .result-title { font-size: 24px; font-weight: 800; margin-top: 8px; }
-    .result-sub   { font-size: 14px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
-    .result-rows  { display: flex; flex-direction: column; gap: 8px; }
-    .result-row   { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border-radius: 10px; }
-    .result-row.imp { border: 1px solid rgba(248,113,113,0.45); background: rgba(248,113,113,0.07); }
-    .result-row.top { border: 1px solid rgba(251,191,36,0.4); }
-    .result-row-info  { flex: 1; }
-    .result-row-name  { font-size: 14px; font-weight: 600; }
-    .result-row-track { font-size: 12px; color: var(--text3); margin-top: 1px; }
-    .result-votes { font-size: 13px; color: var(--text2); min-width: 28px; text-align: right; }
-
-    .spacer { flex: 1; }
-    .or-line { position: relative; text-align: center; font-size: 12px; color: var(--text3); margin: 14px 0; }
-    .or-line::before, .or-line::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--border); }
-    .or-line::before { left: 0; }
-    .or-line::after  { right: 0; }
-    .err { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--danger); margin-bottom: 10px; display: none; }
-    .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.25); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .pulsing { animation: pulse 1.5s ease-in-out infinite; }
-    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
-    .status-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-
-    /* フッター */
-    #footer { text-align: center; padding: 16px; font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); }
-    #footer a { color: var(--text3); text-decoration: underline; }
-  </style>
+@media(max-width:375px){
+  .code-char{width:36px;height:46px;font-size:17px;}
+  .cd-num{font-size:88px;}
+  .vote-av{font-size:26px;}
+  .result-big{font-size:26px;}
+}
+</style>
 </head>
 <body>
 
-
-  <!-- 言語切り替えボタン -->
-  <div id="lang-switcher" style="position:fixed;top:10px;right:12px;z-index:9999;display:flex;gap:6px;">
-    <button onclick="setLang('ja')" id="btn-ja"
-      style="padding:5px 10px;border-radius:8px;border:1.5px solid var(--accent);background:var(--accent);color:white;font-size:13px;font-weight:700;cursor:pointer;">
-      🇯🇵 JP
-    </button>
-    <button onclick="setLang('en')" id="btn-en"
-      style="padding:5px 10px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;">
-      🇺🇸 EN
-    </button>
-  </div>
-<div id="layout">
-
-  <!-- ===== 左サイド広告（PC） ===== -->
-  <div id="ad-left">
-    <!-- 160×600 ワイドスカイスクレイパー -->
-    <ins class="adsbygoogle ad-unit ad-side-tall"
-         style="display:block"
-         data-ad-client="ca-pub-9885018064269523"
-         data-ad-slot="YOUR_AD_SLOT_LEFT_TALL"
-         data-ad-format="auto"
-         data-full-width-responsive="false"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-
-    <!-- 160×250 スモールレクタングル -->
-    <ins class="adsbygoogle ad-unit ad-side-rect"
-         style="display:block"
-         data-ad-client="ca-pub-9885018064269523"
-         data-ad-slot="YOUR_AD_SLOT_LEFT_RECT"
-         data-ad-format="auto"
-         data-full-width-responsive="false"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+<div id="wrap">
+  <!-- TOP AD -->
+  <div class="ad-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px"
+      data-ad-client="ca-pub-9885018064269523" data-ad-slot="YOUR_AD_SLOT_TOP"></ins>
+    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
   </div>
 
-  <!-- ===== メインコンテンツ ===== -->
-  <div id="main">
-
-    <!-- トップ広告（PC・スマホ共通） -->
-    <div id="ad-top">
-      <ins class="adsbygoogle ad-unit ad-top-banner"
-           style="display:block"
-           data-ad-client="ca-pub-9885018064269523"
-           data-ad-slot="YOUR_AD_SLOT_TOP"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
-
-    <!-- ===== ゲーム本体 ===== -->
-    <div id="app">
-
-      <!-- HOME -->
-      <div id="s-home" class="screen active" style="padding-top:0;">
-        <div class="logo">
-          <div class="logo-title">🎵 リズム<span style="color:var(--accent2)">インポスター</span></div>
-          <div data-key="logoSub" style="font-size:11px;color:var(--text3);margin-top:3px;">音楽でインポスターを見つけ出せ！</div>
-          <div class="logo-badge">✅ 無料 · 4〜10人でプレイ</div>
-        </div>
-        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:12px 0;">
-          <div class="card">
-            <div class="card-title" data-key="yourName">あなたの名前</div>
-            <input class="input" id="h-name" placeholder="ニックネームを入力..." maxlength="12"/>
-          </div>
-          <div class="err" id="h-err"></div>
-          <button class="btn btn-primary" id="h-create" onclick="doCreate()">🏠 ルームを作成する</button>
-          <div class="or-line">または</div>
-          <div class="card">
-            <div class="card-title" data-key="joinRoom">ルームに参加</div>
-            <input class="input" id="h-code" placeholder="6桁のコード" maxlength="6"
-              style="letter-spacing:5px;font-size:20px;text-align:center;font-family:monospace;"
-              oninput="this.value=this.value.toUpperCase()"/>
-            <button class="btn btn-secondary" id="h-join" onclick="doJoin()" style="margin-top:10px;">➡️ 参加する</button>
-          </div>
-        </div>
-        <div data-key="homeFooter" style="text-align:center;color:var(--text3);font-size:12px;padding:8px 0;">友達のスマホで同じコードを入力して参加！</div>
-      </div>
-
-      <!-- LOBBY -->
-      <div id="s-lobby" class="screen">
-        <div class="phase-dots"><div class="dot now"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-        <div class="room-code">
-          <div class="room-code-num" id="l-code">------</div>
-          <div data-key="shareCode" class="room-code-label">このコードを友達に送ってね</div>
-        </div>
-        <div class="card">
-          <div class="status-row">
-            <span data-key="players" class="card-title" style="margin:0;">参加者</span>
-            <span style="font-size:12px;color:var(--accent2);font-weight:600;" id="l-count">0人</span>
-          </div>
-          <div class="members-list" id="l-members"></div>
-        </div>
-        <div id="l-host-section" style="display:none;">
-          <div class="card">
-            <div data-key="selectMusic" class="card-title">🎵 曲セットを選択</div>
-            <div class="track-options" id="l-tracks"></div>
-          </div>
-          <button class="btn btn-primary" id="l-start" onclick="doStart()" disabled>🎵 ゲームスタート！</button>
-        </div>
-        <div id="l-guest-section" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:14px;" class="pulsing">
-          <span data-key="waitingHost">ホストがゲームを開始するまで待ってね 🎵</span>
-        </div>
-        <div class="spacer"></div>
-        <button data-key="backHome" class="btn btn-secondary" onclick="goHome()" style="margin-top:12px;">← ホームに戻る</button>
-      </div>
-
-      <!-- COUNTDOWN -->
-      <div id="s-countdown" class="screen">
-        <div class="phase-dots"><div class="dot done"></div><div class="dot now"></div><div class="dot"></div><div class="dot"></div></div>
-        <div class="countdown-wrap">
-          <div data-key="listenTogether" class="countdown-sub">全員で一緒に聴こう！</div>
-          <div class="countdown-big" id="cd-num">3</div>
-          <div class="countdown-sub" id="cd-msg">準備して...</div>
-        </div>
-      </div>
-
-      <!-- PLAYING -->
-      <div id="s-playing" class="screen">
-        <div class="phase-dots"><div class="dot done"></div><div class="dot done"></div><div class="dot now"></div><div class="dot"></div></div>
-        <div class="player-wrap">
-          <div class="card player-hero">
-            <div class="player-genre-icon" id="p-icon">🎷</div>
-            <div class="player-genre-name" id="p-name">---</div>
-            <div class="player-role" id="p-role"></div>
-            <div class="visualizer" id="p-viz"></div>
-            <div class="beat-grid" id="p-beats"></div>
-          </div>
-          <div class="card">
-            <div data-key="hintTitle" class="card-title">ヒント</div>
-            <div class="hint-box">
-              <span data-key="hintBody">周りの人のリズム・テンポ・ノリを感じてみよう。<strong>明らかに違う</strong>と感じる人がいればインポスターかも？<br>曲が終わったら「聞き終わった」を押してね。</span>
-            </div>
-          </div>
-        </div>
-        <button class="btn btn-success" id="p-done" onclick="doDone()">✅ 聞き終わった！</button>
-      </div>
-
-      <!-- VOTING -->
-      <div id="s-voting" class="screen">
-        <div class="phase-dots"><div class="dot done"></div><div class="dot done"></div><div class="dot done"></div><div class="dot now"></div></div>
-        <div class="card" style="margin-bottom:10px;">
-          <div data-key="votingTitle" class="card-title" style="margin-bottom:4px;">投票フェーズ</div>
-          <div data-key="votingDesc" style="font-size:13px;color:var(--text2);">誰がインポスターだと思う？タップして投票！</div>
-        </div>
-        <div class="vote-grid" id="v-grid"></div>
-        <button class="btn btn-danger" id="v-btn" onclick="doVote()" disabled>🗳️ この人に投票！</button>
-      </div>
-
-      <!-- RESULT -->
-      <div id="s-result" class="screen">
-        <div class="phase-dots"><div class="dot done"></div><div class="dot done"></div><div class="dot done"></div><div class="dot done"></div></div>
-        <div class="card result-hero">
-          <div class="result-icon" id="r-icon">🎉</div>
-          <div class="result-title" id="r-title"></div>
-          <div class="result-sub" id="r-sub"></div>
-        </div>
-        <div class="card">
-          <div data-key="imposterWas" class="card-title">インポスターは…</div>
-          <div style="text-align:center;padding:12px 0;">
-            <div style="font-size:36px;" id="r-imp-emoji"></div>
-            <div style="font-size:18px;font-weight:700;margin-top:4px;" id="r-imp-name"></div>
-            <div style="font-size:12px;color:var(--danger);margin-top:3px;">🎵 <span id="r-imp-track"></span></div>
-          </div>
-        </div>
-        <!-- 結果画面の広告（インタースティシャル的に） -->
-        <div style="margin-bottom:12px;">
-          <ins class="adsbygoogle ad-unit"
-               style="display:block;width:100%;height:100px;"
-               data-ad-client="ca-pub-9885018064269523"
-               data-ad-slot="YOUR_AD_SLOT_RESULT"
-               data-ad-format="auto"
-               data-full-width-responsive="true"></ins>
-          <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-        </div>
-        <div class="card">
-          <div data-key="voteResults" class="card-title">投票結果</div>
-          <div class="result-rows" id="r-rows"></div>
-        </div>
-        <button data-key="playAgain" class="btn btn-primary" onclick="goHome()" style="margin-top:4px;">🔄 もう一度あそぶ</button>
-        <div style="height:12px;"></div>
-      </div>
-
-    </div><!-- /app -->
-
-    <!-- ボトム広告 -->
-    <div id="ad-bottom">
-      <ins class="adsbygoogle ad-unit ad-bottom-banner"
-           style="display:block"
-           data-ad-client="ca-pub-9885018064269523"
-           data-ad-slot="YOUR_AD_SLOT_BOTTOM"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
-
-    <div id="footer">
-      <p>© 2025 リズムインポスター &nbsp;|&nbsp; <a href="#" onclick="alert('お問い合わせ: your@email.com')">お問い合わせ</a> &nbsp;|&nbsp; <a href="#" onclick="showPrivacy()">プライバシーポリシー</a></p>
-      <p style="margin-top:4px;">本ゲームは子供も安全に遊べるよう設計されています</p>
-    </div>
-  </div><!-- /main -->
-
-  <!-- ===== 右サイド広告（PC） ===== -->
-  <div id="ad-right">
-    <ins class="adsbygoogle ad-unit ad-side-tall"
-         style="display:block"
-         data-ad-client="ca-pub-9885018064269523"
-         data-ad-slot="YOUR_AD_SLOT_RIGHT_TALL"
-         data-ad-format="auto"
-         data-full-width-responsive="false"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-
-    <ins class="adsbygoogle ad-unit ad-side-rect"
-         style="display:block"
-         data-ad-client="ca-pub-9885018064269523"
-         data-ad-slot="YOUR_AD_SLOT_RIGHT_RECT"
-         data-ad-format="auto"
-         data-full-width-responsive="false"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  <!-- LANG SWITCHER -->
+  <div id="lang-sw">
+    <button id="btn-ja" class="active" onclick="setLang('ja')">🇯🇵 JP</button>
+    <button id="btn-en" onclick="setLang('en')">🇺🇸 EN</button>
   </div>
 
-</div><!-- /layout -->
+  <div id="app">
 
-<!-- ===== Supabase ===== -->
+    <!-- HOME -->
+    <div id="s-home" class="screen active">
+      <div class="hero">
+        <div class="hero-logo">🎧</div>
+        <div class="hero-title">Rhythm Impostor</div>
+        <div class="hero-sub" id="h-sub">音楽でインポスターを見つけ出せ！</div>
+        <div class="hero-badge" id="h-badge">✅ 無料 · 4〜10人でプレイ</div>
+      </div>
+
+      <div class="section-label" id="h-name-label">あなたの名前</div>
+      <div class="glass-card">
+        <input class="input" id="h-name" placeholder="ニックネームを入力..." maxlength="12"/>
+      </div>
+
+      <div class="err-box" id="h-err"></div>
+
+      <button class="btn btn-primary" id="h-create" onclick="doCreate()">🏠 ルームを作成する</button>
+
+      <div class="divider" id="h-or">または</div>
+
+      <div class="section-label" id="h-join-label">ルームに参加</div>
+      <div class="glass-card">
+        <input class="input code-input" id="h-code" placeholder="------" maxlength="6" oninput="this.value=this.value.toUpperCase()"/>
+      </div>
+      <button class="btn btn-ghost" id="h-join" onclick="doJoin()">➡️ 参加する</button>
+
+      <div class="spacer"></div>
+      <div style="text-align:center;font-size:12px;color:var(--text3);padding:12px 0;" id="h-footer">友達のスマホで同じコードを入力して参加！</div>
+    </div>
+
+    <!-- LOBBY -->
+    <div id="s-lobby" class="screen">
+      <div class="phase-dots"><div class="pdot now"></div><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div></div>
+
+      <div class="room-code-card">
+        <div class="section-label" id="l-code-label">ルームコード</div>
+        <div class="code-display" id="l-code-chars"></div>
+        <div class="code-hint" id="l-code-hint">このコードを友達に送ってね</div>
+      </div>
+
+      <div class="glass-card">
+        <div class="section-row">
+          <div class="section-label" id="l-players-label">参加者</div>
+          <div class="count-chip" id="l-count">0人</div>
+        </div>
+        <div class="player-list" id="l-members"></div>
+      </div>
+
+      <div id="l-host-area" style="display:none;">
+        <div class="glass-card">
+          <div class="section-label" id="l-track-label">🎵 曲セットを選択</div>
+          <div class="track-grid" id="l-tracks"></div>
+        </div>
+        <button class="btn btn-primary" id="l-start" onclick="doStart()" disabled>🎵 ゲームスタート！</button>
+      </div>
+
+      <div id="l-guest-area" style="display:none;text-align:center;padding:24px;color:var(--text3);font-size:14px;font-weight:500;" class="pulsing" id="l-wait-msg">
+        ホストがゲームを開始するまで待ってね 🎵
+      </div>
+
+      <div class="spacer"></div>
+      <button class="btn btn-secondary" id="l-back" onclick="goHome()" style="margin-top:12px;">← ホームに戻る</button>
+    </div>
+
+    <!-- COUNTDOWN -->
+    <div id="s-countdown" class="screen">
+      <div class="phase-dots"><div class="pdot done"></div><div class="pdot now"></div><div class="pdot"></div><div class="pdot"></div></div>
+      <div class="cd-wrap">
+        <div class="cd-label" id="cd-top">全員で一緒に聴こう！</div>
+        <div class="cd-num" id="cd-num">3</div>
+        <div class="cd-msg" id="cd-msg">準備して...</div>
+      </div>
+    </div>
+
+    <!-- PLAYING -->
+    <div id="s-playing" class="screen">
+      <div class="phase-dots"><div class="pdot done"></div><div class="pdot done"></div><div class="pdot now"></div><div class="pdot"></div></div>
+      <div class="play-hero">
+        <div class="vinyl-wrap">
+          <div class="vinyl" id="p-vinyl">
+            <div class="vinyl-ring"></div>
+          </div>
+          <div class="vinyl-center" id="p-icon">🎷</div>
+        </div>
+        <div class="play-genre" id="p-name">---</div>
+        <div class="role-badge normal" id="p-role">🔵 一般プレイヤー</div>
+        <div class="viz" id="p-viz"></div>
+        <div class="beat-grid" id="p-beats"></div>
+      </div>
+      <div class="hint-card" id="p-hint">
+        周りの人のリズム・テンポ・ノリを感じてみよう。<strong>明らかに違う</strong>と感じる人がいればインポスターかも？
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-success" id="p-done" onclick="doDone()" style="margin-top:12px;">✅ 聞き終わった！</button>
+    </div>
+
+    <!-- VOTING -->
+    <div id="s-voting" class="screen">
+      <div class="phase-dots"><div class="pdot done"></div><div class="pdot done"></div><div class="pdot done"></div><div class="pdot now"></div></div>
+      <div class="vote-header">
+        <div class="vote-title" id="v-title">🕵️ 誰がインポスター？</div>
+        <div class="vote-sub" id="v-sub">タップして選んで投票！</div>
+      </div>
+      <div class="vote-grid" id="v-grid"></div>
+      <button class="btn btn-danger" id="v-btn" onclick="doVote()" disabled>🗳️ この人に投票！</button>
+    </div>
+
+    <!-- RESULT -->
+    <div id="s-result" class="screen">
+      <div class="phase-dots"><div class="pdot done"></div><div class="pdot done"></div><div class="pdot done"></div><div class="pdot done"></div></div>
+      <div class="result-header">
+        <div class="result-outcome" id="r-outcome">VICTORY</div>
+        <div class="result-big" id="r-big">正解！みんなの勝ち！</div>
+        <div class="result-status caught" id="r-status">Impostor Caught!</div>
+      </div>
+
+      <div class="glass-card">
+        <div class="section-label" id="r-imp-label">インポスターは…</div>
+        <div class="imp-reveal">
+          <div class="imp-av" id="r-imp-emoji">❓</div>
+          <div class="imp-name" id="r-imp-name">---</div>
+          <div class="imp-track">🎵 <span id="r-imp-track">---</span></div>
+        </div>
+      </div>
+
+      <!-- Result Ad -->
+      <div style="margin-bottom:12px;text-align:center;">
+        <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px"
+          data-ad-client="ca-pub-9885018064269523" data-ad-slot="YOUR_AD_SLOT_RESULT"></ins>
+        <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+      </div>
+
+      <div class="glass-card">
+        <div class="section-label" id="r-votes-label">投票結果</div>
+        <div class="result-list" id="r-rows"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="goHome()" style="margin-top:4px;" id="r-again">🔄 もう一度あそぶ</button>
+      <div style="height:12px;"></div>
+    </div>
+
+  </div><!-- /app -->
+
+  <!-- BOTTOM AD -->
+  <div class="ad-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px"
+      data-ad-client="ca-pub-9885018064269523" data-ad-slot="YOUR_AD_SLOT_BOTTOM"></ins>
+    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+  </div>
+</div><!-- /wrap -->
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+/* ============ SUPABASE ============ */
+const SUPA_URL='https://orhtqozyagxipngaklsy.supabase.co';
+const SUPA_KEY='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 
-/* =============================================
-   i18n 言語切り替え
-   ============================================= */
-const I18N = {
-  ja: {
-    logoSub: '音楽でインポスターを見つけ出せ！',
-    logoBadge: '✅ 無料 · 4〜10人でプレイ',
-    yourName: 'あなたの名前',
-    namePlaceholder: 'ニックネームを入力...',
-    createRoom: '🏠 ルームを作成する',
-    creatingRoom: 'ルーム作成中...',
-    orText: 'または',
-    joinRoom: 'ルームに参加',
-    codePlaceholder: '6桁のコード',
-    joinBtn: '➡️ 参加する',
-    joiningBtn: '参加中...',
-    homeFooter: '友達のスマホで同じコードを入力して参加！',
-    shareCode: 'このコードを友達に送ってね',
-    players: '参加者',
-    selectMusic: '🎵 曲セットを選択',
-    startGame: '🎵 ゲームスタート！',
-    startingGame: 'スタート中...',
-    waitingHost: 'ホストがゲームを開始するまで待ってね 🎵',
-    backHome: '← ホームに戻る',
-    listenTogether: '全員で一緒に聴こう！',
-    getReady: '準備して...',
-    almostTime: 'もうすぐ...',
-    hereWeGo: 'いくよ！',
-    playStart: '再生スタート！',
-    hintTitle: 'ヒント',
-    hintBody: '周りの人のリズム・テンポ・ノリを感じてみよう。<strong>明らかに違う</strong>と感じる人がいればインポスターかも？<br>曲が終わったら「聞き終わった」を押してね。',
-    doneListening: '✅ 聞き終わった！',
-    waitingOthers: '⏳ 他の人を待っています...',
-    roleImposter: '🔴 あなたはインポスター！バレないように！',
-    roleNormal: '🔵 あなたは一般プレイヤー',
-    votingTitle: '投票フェーズ',
-    votingDesc: '誰がインポスターだと思う？タップして投票！',
-    voteBtn: '🗳️ この人に投票！',
-    votingBtn: '⏳ 集計中...',
-    votedBtn: '✅ 投票済み！集計中...',
-    youSuffix: ' (自分)',
-    imposterWas: 'インポスターは…',
-    voteResults: '投票結果',
-    playAgain: '🔄 もう一度あそぶ',
-    correctTitle: '正解！みんなの勝ち！',
-    wrongTitle: '騙された！インポスターの勝ち！',
-    correctSub: (name) => `${name} が最多票で、本当のインポスターでした！`,
-    wrongSub: (name) => `最多票の ${name} は無実… 本当のインポスターは別の人！`,
-    everyoneLabel: t('everyoneLabel'),
-    imposterLabel: t('imposterLabel'),
-    errName: t('errName'),
-    errCode: t('errCode'),
-    errNoRoom: 'ルームが見つかりません',
-    errStarted: 'ゲームはすでに開始しています',
-    errPrefix: 'エラー: ',
+/* ============ i18n ============ */
+const I18N={
+  ja:{
+    hSub:'音楽でインポスターを見つけ出せ！',hBadge:'✅ 無料 · 4〜10人でプレイ',
+    hNameLabel:'あなたの名前',hNamePh:'ニックネームを入力...',
+    hCreate:'🏠 ルームを作成する',hCreating:'作成中...',
+    hOr:'または',hJoinLabel:'ルームに参加',hCodePh:'------',
+    hJoin:'➡️ 参加する',hJoining:'参加中...',hFooter:'友達のスマホで同じコードを入力して参加！',
+    lCodeLabel:'ルームコード',lCodeHint:'このコードを友達に送ってね',
+    lPlayersLabel:'参加者',lTrackLabel:'🎵 曲セットを選択',
+    lStart:'🎵 ゲームスタート！',lStarting:'スタート中...',
+    lWait:'ホストがゲームを開始するまで待ってね 🎵',lBack:'← ホームに戻る',
+    cdTop:'全員で一緒に聴こう！',cdReady:'準備して...',cdAlmost:'もうすぐ...',cdGo:'いくよ！',cdPlay:'再生スタート！',
+    pHint:'周りの人のリズム・テンポ・ノリを感じてみよう。<strong>明らかに違う</strong>と感じる人がいればインポスターかも？',
+    pDone:'✅ 聞き終わった！',pWait:'⏳ 他の人を待っています...',
+    roleNormal:'🔵 一般プレイヤー',roleImp:'🔴 インポスター！バレないように！',
+    vTitle:'🕵️ 誰がインポスター？',vSub:'タップして選んで投票！',
+    vBtn:'🗳️ この人に投票！',vVoting:'⏳ 集計中...',vVoted:'✅ 投票済み！集計中...',
+    rImpLabel:'インポスターは…',rVotesLabel:'投票結果',rAgain:'🔄 もう一度あそぶ',
+    rWin:'VICTORY',rLose:'DEFEAT',rCaught:'Impostor Caught!',rEscaped:'Impostor Escaped!',
+    rWinBig:'正解！みんなの勝ち！',rLoseBig:'騙された！インポスターの勝ち！',
+    rWinSub:(n)=>`${n} が最多票で、本当のインポスターでした！`,
+    rLoseSub:(n)=>`最多票の ${n} は無実… 本当のインポスターは別の人！`,
+    youSuffix:' (自分)',errName:'名前を入力してください',errCode:'6桁のコードを入力してください',
+    errNoRoom:'ルームが見つかりません',errStarted:'ゲームはすでに開始しています',errPfx:'エラー: ',
+    everyoneLabel:'👥 全員：',imposterLabel:'🔴 インポスター：',
   },
-  en: {
-    logoSub: 'Find the impostor by listening to music!',
-    logoBadge: '✅ Free · 4–10 players',
-    yourName: 'Your Name',
-    namePlaceholder: 'Enter your nickname...',
-    createRoom: '🏠 Create Room',
-    creatingRoom: 'Creating room...',
-    orText: 'or',
-    joinRoom: 'Join Room',
-    codePlaceholder: '6-digit code',
-    joinBtn: '➡️ Join',
-    joiningBtn: 'Joining...',
-    homeFooter: 'Share the code with friends and play together!',
-    shareCode: 'Share this code with your friends',
-    players: 'Players',
-    selectMusic: '🎵 Select Music Set',
-    startGame: '🎵 Start Game!',
-    startingGame: 'Starting...',
-    waitingHost: 'Waiting for the host to start the game 🎵',
-    backHome: '← Back to Home',
-    listenTogether: 'Everyone listen together!',
-    getReady: 'Get ready...',
-    almostTime: 'Almost...',
-    hereWeGo: 'Here we go!',
-    playStart: 'Play!',
-    hintTitle: 'Hint',
-    hintBody: 'Feel the rhythm, tempo, and groove of the people around you. If someone sounds <strong>clearly different</strong>, they might be the impostor!<br>Press "Done Listening" when you're finished.',
-    doneListening: '✅ Done Listening!',
-    waitingOthers: '⏳ Waiting for others...',
-    roleImposter: "🔴 You are the Impostor! Don't get caught!",
-    roleNormal: '🔵 You are a Regular Player',
-    votingTitle: 'Voting Phase',
-    votingDesc: 'Who do you think is the impostor? Tap to vote!',
-    voteBtn: '🗳️ Vote for this person!',
-    votingBtn: '⏳ Counting votes...',
-    votedBtn: '✅ Voted! Counting...',
-    youSuffix: ' (You)',
-    imposterWas: 'The Impostor was…',
-    voteResults: 'Vote Results',
-    playAgain: '🔄 Play Again',
-    correctTitle: 'Correct! Everyone wins!',
-    wrongTitle: 'Fooled! The Impostor wins!',
-    correctSub: (name) => `${name} got the most votes and was the real Impostor!`,
-    wrongSub: (name) => `Most voted: ${name} was innocent… The real Impostor was someone else!`,
-    everyoneLabel: '👥 Everyone: ',
-    imposterLabel: '🔴 Impostor: ',
-    errName: 'Please enter your name',
-    errCode: 'Please enter the 6-digit code',
-    errNoRoom: 'Room not found',
-    errStarted: 'Game has already started',
-    errPrefix: 'Error: ',
+  en:{
+    hSub:'Find the impostor by listening to music!',hBadge:'✅ Free · 4–10 players',
+    hNameLabel:'Your Name',hNamePh:'Enter your nickname...',
+    hCreate:'🏠 Create Room',hCreating:'Creating...',
+    hOr:'or',hJoinLabel:'Join Room',hCodePh:'------',
+    hJoin:'➡️ Join',hJoining:'Joining...',hFooter:'Share the code with friends and play together!',
+    lCodeLabel:'Room Code',lCodeHint:'Share this code with your friends',
+    lPlayersLabel:'Players',lTrackLabel:'🎵 Select Music Set',
+    lStart:'🎵 Start Game!',lStarting:'Starting...',
+    lWait:'Waiting for the host to start the game 🎵',lBack:'← Back to Home',
+    cdTop:'Everyone listen together!',cdReady:'Get ready...',cdAlmost:'Almost...',cdGo:'Here we go!',cdPlay:'Play!',
+    pHint:'Feel the rhythm, tempo, and groove around you. If someone sounds <strong>clearly different</strong>, they might be the impostor!',
+    pDone:'✅ Done Listening!',pWait:'⏳ Waiting for others...',
+    roleNormal:'🔵 Regular Player',roleImp:"🔴 You are the Impostor! Don't get caught!",
+    vTitle:'🕵️ Who is the Impostor?',vSub:'Tap to select and vote!',
+    vBtn:'🗳️ Vote for this person!',vVoting:'⏳ Counting...',vVoted:'✅ Voted! Counting...',
+    rImpLabel:'The Impostor was…',rVotesLabel:'Vote Results',rAgain:'🔄 Play Again',
+    rWin:'VICTORY',rLose:'DEFEAT',rCaught:'Impostor Caught!',rEscaped:'Impostor Escaped!',
+    rWinBig:'Correct! Everyone wins!',rLoseBig:'Fooled! The Impostor wins!',
+    rWinSub:(n)=>`${n} got the most votes and was the real Impostor!`,
+    rLoseSub:(n)=>`Most voted: ${n} was innocent… The real Impostor was someone else!`,
+    youSuffix:' (You)',errName:'Please enter your name',errCode:'Please enter the 6-digit code',
+    errNoRoom:'Room not found',errStarted:'Game has already started',errPfx:'Error: ',
+    everyoneLabel:'👥 Everyone: ',imposterLabel:'🔴 Impostor: ',
   }
 };
+let lang='ja';
+function L(k,...a){const v=I18N[lang][k];return typeof v==='function'?v(...a):(v||k);}
 
-let currentLang = 'ja';
-function t(key, ...args) {
-  const val = I18N[currentLang][key];
-  return typeof val === 'function' ? val(...args) : (val || I18N['ja'][key] || key);
-}
-
-function setLang(lang) {
-  currentLang = lang;
-  // ボタンスタイル切り替え
-  document.getElementById('btn-ja').style.background = lang==='ja' ? 'var(--accent)' : 'var(--surface2)';
-  document.getElementById('btn-ja').style.color = lang==='ja' ? 'white' : 'var(--text2)';
-  document.getElementById('btn-ja').style.borderColor = lang==='ja' ? 'var(--accent)' : 'var(--border2)';
-  document.getElementById('btn-en').style.background = lang==='en' ? 'var(--accent)' : 'var(--surface2)';
-  document.getElementById('btn-en').style.color = lang==='en' ? 'white' : 'var(--text2)';
-  document.getElementById('btn-en').style.borderColor = lang==='en' ? 'var(--accent)' : 'var(--border2)';
+function setLang(l){
+  lang=l;
+  document.getElementById('btn-ja').className=l==='ja'?'active':'';
+  document.getElementById('btn-en').className=l==='en'?'active':'';
   applyLang();
 }
-
-function applyLang() {
-  const L = I18N[currentLang];
-  // ホーム
-  const logoSub = document.querySelector('.logo div[data-key="logoSub"]');
-  if(logoSub) logoSub.textContent = L.logoSub;
-  const logoBadge = document.querySelector('.logo-badge');
-  if(logoBadge) logoBadge.textContent = L.logoBadge;
-
-  const nameLabel = document.querySelector('[data-key="yourName"]');
-  if(nameLabel) nameLabel.textContent = L.yourName;
-  const nameInput = document.getElementById('h-name');
-  if(nameInput) nameInput.placeholder = L.namePlaceholder;
-  const createBtn = document.getElementById('h-create');
-  if(createBtn && !createBtn.disabled) createBtn.textContent = L.createRoom;
-  const orLine = document.querySelector('.or-line');
-  if(orLine) orLine.textContent = L.orText;
-  const joinLabel = document.querySelector('[data-key="joinRoom"]');
-  if(joinLabel) joinLabel.textContent = L.joinRoom;
-  const codeInput = document.getElementById('h-code');
-  if(codeInput) codeInput.placeholder = L.codePlaceholder;
-  const joinBtn = document.getElementById('h-join');
-  if(joinBtn && !joinBtn.disabled) joinBtn.textContent = L.joinBtn;
-  const homeFooter = document.querySelector('[data-key="homeFooter"]');
-  if(homeFooter) homeFooter.textContent = L.homeFooter;
-
-  // ロビー
-  const shareCode = document.querySelector('[data-key="shareCode"]');
-  if(shareCode) shareCode.textContent = L.shareCode;
-  const playersLabel = document.querySelector('[data-key="players"]');
-  if(playersLabel) playersLabel.textContent = L.players;
-  const selectMusic = document.querySelector('[data-key="selectMusic"]');
-  if(selectMusic) selectMusic.textContent = L.selectMusic;
-  const startBtn = document.getElementById('l-start');
-  if(startBtn && !startBtn.disabled) startBtn.textContent = L.startGame;
-  const waitingHost = document.querySelector('[data-key="waitingHost"]');
-  if(waitingHost) waitingHost.textContent = L.waitingHost;
-  const backHome = document.querySelector('[data-key="backHome"]');
-  if(backHome) backHome.textContent = L.backHome;
-
-  // カウントダウン
-  const listenTogether = document.querySelector('[data-key="listenTogether"]');
-  if(listenTogether) listenTogether.textContent = L.listenTogether;
-
-  // プレイ中
-  const hintTitle = document.querySelector('[data-key="hintTitle"]');
-  if(hintTitle) hintTitle.textContent = L.hintTitle;
-  const hintBody = document.querySelector('[data-key="hintBody"]');
-  if(hintBody) hintBody.innerHTML = L.hintBody;
-  const doneBtn = document.getElementById('p-done');
-  if(doneBtn && !doneBtn.disabled) doneBtn.textContent = L.doneListening;
-
-  // 投票
-  const votingTitle = document.querySelector('[data-key="votingTitle"]');
-  if(votingTitle) votingTitle.textContent = L.votingTitle;
-  const votingDesc = document.querySelector('[data-key="votingDesc"]');
-  if(votingDesc) votingDesc.textContent = L.votingDesc;
-  const voteBtn = document.getElementById('v-btn');
-  if(voteBtn && !voteBtn.disabled) voteBtn.textContent = L.voteBtn;
-
-  // 結果
-  const imposterWas = document.querySelector('[data-key="imposterWas"]');
-  if(imposterWas) imposterWas.textContent = L.imposterWas;
-  const voteResults = document.querySelector('[data-key="voteResults"]');
-  if(voteResults) voteResults.textContent = L.voteResults;
-  const playAgain = document.querySelector('[data-key="playAgain"]');
-  if(playAgain) playAgain.textContent = L.playAgain;
-
-  // トラックオプション再描画
+function applyLang(){
+  const set=(id,k,attr)=>{const el=document.getElementById(id);if(!el)return;if(attr)el[attr]=L(k);else el.innerHTML=L(k);};
+  set('h-sub','hSub');set('h-badge','hBadge');set('h-name-label','hNameLabel');
+  set('h-name','hNamePh','placeholder');set('h-or','hOr');
+  set('h-join-label','hJoinLabel');set('h-footer','hFooter');
+  set('l-code-label','lCodeLabel');set('l-code-hint','lCodeHint');
+  set('l-players-label','lPlayersLabel');set('l-track-label','lTrackLabel');
+  set('l-back','lBack');
+  set('cd-top','cdTop');
+  set('p-hint','pHint');
+  set('v-title','vTitle');set('v-sub','vSub');
+  set('r-imp-label','rImpLabel');set('r-votes-label','rVotesLabel');set('r-again','rAgain');
+  const cb=document.getElementById('h-create');if(cb&&!cb.disabled)cb.textContent=L('hCreate');
+  const jb=document.getElementById('h-join');if(jb&&!jb.disabled)jb.textContent=L('hJoin');
+  const sb2=document.getElementById('l-start');if(sb2&&!sb2.disabled)sb2.textContent=L('lStart');
+  const vb=document.getElementById('v-btn');if(vb&&!vb.disabled)vb.textContent=L('vBtn');
   renderTrackOpts();
 }
 
-/* =============================================
-   SUPABASE 設定
-   ============================================= */
-const SUPA_URL = 'https://orhtqozyagxipngaklsy.supabase.co';
-const SUPA_KEY = 'sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
-
-/* =============================================
-   音楽定義（Web Audio API）
-   ============================================= */
-const TRACK_SETS = [
-  // ① スウィングジャズ vs EDM
-  {
-    id: 'jazz_edm',
-    name: '🎷 Jazz vs EDM',
-    normalLabel:   'スウィングジャズ（跳ねるリズム）',
-    imposterLabel: '4つ打ちEDM（ドンドンドン）',
-    normal: {
-      icon:'🎷', name:'Swing Jazz', bpm:120, swing:0.67,
-      kick:  [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
-      snare: [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
-      hihat: [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1],
-      bassNote:[55,0,0,55,0,62,0,0,55,0,0,55,0,58,0,0],
-      melody:  [69,0,72,0,74,0,72,0,69,0,67,0,65,0,67,0],
-    },
-    imposter: {
-      icon:'🎛️', name:'EDM 4-on-the-floor', bpm:128, swing:0.5,
-      kick:  [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
-      snare: [0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
-      hihat: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      bassNote:[36,0,36,0,36,0,36,0,36,0,36,0,36,0,36,0],
-      melody:  [84,0,84,0,84,87,0,84,84,0,84,0,84,87,0,0],
-    },
-  },
-  // ② ワルツ vs ヘビーロック
-  {
-    id: 'waltz_rock',
-    name: '🎻 ワルツ vs ロック',
-    normalLabel:   '優雅なワルツ（3拍子）',
-    imposterLabel: 'ヘビーロック（4拍子・激しい）',
-    normal: {
-      icon:'🎻', name:'Classic Waltz', bpm:90, swing:0.5, steps:12,
-      kick:  [1,0,0,0,0,0,1,0,0,0,0,0],
-      snare: [0,0,0,1,0,0,0,0,0,1,0,0],
-      hihat: [1,1,1,1,1,1,1,1,1,1,1,1],
-      bassNote:[48,0,0,55,0,0,48,0,0,53,0,0],
-      melody:  [72,0,74,76,0,0,72,0,69,67,0,0],
-    },
-    imposter: {
-      icon:'🎸', name:'Heavy Rock', bpm:120, swing:0.5,
-      kick:  [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
-      snare: [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
-      hihat: [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
-      bassNote:[33,33,0,33,0,33,0,0,33,33,0,33,0,33,33,0],
-      melody:  [57,0,57,0,60,0,0,0,57,0,57,0,58,0,0,0],
-    },
-  },
-  // ③ ボサノバ vs 軍隊マーチ
-  {
-    id: 'bossa_march',
-    name: '🌴 ボサノバ vs マーチ',
-    normalLabel:   'ゆったりボサノバ（複合リズム）',
-    imposterLabel: 'キビキビ軍隊マーチ（左右対称）',
-    normal: {
-      icon:'🌴', name:'Bossa Nova', bpm:80, swing:0.5,
-      kick:  [1,0,0,0,0,1,0,0,1,0,0,0,0,1,0,0],
-      snare: [0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1],
-      hihat: [1,0,1,0,1,1,0,1,1,0,1,0,1,1,0,1],
-      bassNote:[45,0,0,52,0,0,50,0,45,0,0,52,0,0,47,0],
-      melody:  [69,0,72,0,74,72,0,0,69,0,67,0,65,67,0,0],
-    },
-    imposter: {
-      icon:'🥁', name:'Military March', bpm:112, swing:0.5,
-      kick:  [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
-      snare: [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
-      hihat: [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
-      bassNote:[48,0,48,0,43,0,43,0,48,0,48,0,43,0,43,0],
-      melody:  [60,0,64,0,67,0,64,0,60,0,64,0,67,67,67,0],
-    },
-  },
-  // ④ HIP HOP vs サンバ
-  {
-    id: 'hiphop_samba',
-    name: '🎤 Hip Hop vs サンバ',
-    normalLabel:   'Hip Hop（重いグルーヴ・BPM90）',
-    imposterLabel: 'サンバ（軽快・BPM120）',
-    normal: {
-      icon:'🎤', name:'Hip Hop Groove', bpm:90, swing:0.62,
-      kick:  [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],
-      snare: [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],
-      hihat: [1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
-      bassNote:[36,0,0,36,0,0,41,0,36,0,0,36,0,43,0,0],
-      melody:  [60,0,60,0,63,0,0,60,58,0,0,58,60,0,0,0],
-    },
-    imposter: {
-      icon:'🇧🇷', name:'Samba', bpm:120, swing:0.5,
-      kick:  [1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0],
-      snare: [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
-      hihat: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      bassNote:[48,0,52,0,55,0,52,0,48,0,52,0,55,0,52,0],
-      melody:  [67,0,69,0,71,0,72,0,71,0,69,0,67,0,65,0],
-    },
-  },
-  // ⑤ アイルランド民謡 vs フラメンコ
-  {
-    id: 'irish_flamenco',
-    name: '☘️ アイルランド民謡 vs フラメンコ',
-    normalLabel:   'アイルランド民謡（6/8拍子・軽快）',
-    imposterLabel: 'フラメンコ（12拍子・情熱的）',
-    normal: {
-      icon:'☘️', name:'Irish Jig', bpm:132, swing:0.5, steps:12,
-      kick:  [1,0,0,1,0,0,1,0,0,1,0,0],
-      snare: [0,0,1,0,0,1,0,0,1,0,0,1],
-      hihat: [1,1,0,1,1,0,1,1,0,1,1,0],
-      bassNote:[52,0,0,55,0,0,52,0,0,48,0,0],
-      melody:  [76,74,72,74,76,79,76,74,72,71,72,74],
-    },
-    imposter: {
-      icon:'💃', name:'Flamenco', bpm:100, swing:0.5, steps:12,
-      kick:  [1,0,0,0,1,0,0,1,0,0,1,0],
-      snare: [0,0,1,0,0,0,1,0,0,1,0,0],
-      hihat: [1,0,1,0,1,0,1,0,1,0,1,0],
-      bassNote:[40,0,0,43,0,0,45,0,0,43,0,0],
-      melody:  [64,0,65,0,67,0,65,64,62,0,60,0],
-    },
-  },
-  // ⑥ レゲエ vs テクノ
-  {
-    id: 'reggae_techno',
-    name: '🏝️ レゲエ vs テクノ',
-    normalLabel:   'レゲエ（オフビート・ゆったり）',
-    imposterLabel: 'テクノ（高速・機械的）',
-    normal: {
-      icon:'🏝️', name:'Reggae', bpm:75, swing:0.5,
-      kick:  [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
-      snare: [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
-      hihat: [0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
-      bassNote:[43,0,0,0,43,0,0,43,41,0,0,0,41,0,0,41],
-      melody:  [0,0,67,0,0,0,67,0,0,0,65,0,0,0,65,0],
-    },
-    imposter: {
-      icon:'⚙️', name:'Techno', bpm:140, swing:0.5,
-      kick:  [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
-      snare: [0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
-      hihat: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      bassNote:[36,0,36,0,36,0,36,36,36,0,36,0,36,0,36,36],
-      melody:  [72,0,0,72,0,0,72,0,75,0,0,75,0,0,75,0],
-    },
-  },
-  // ⑦ 沖縄民謡 vs タンゴ
-  {
-    id: 'okinawa_tango',
-    name: '🌺 沖縄民謡 vs タンゴ',
-    normalLabel:   '沖縄民謡（琉球音階・ゆったり）',
-    imposterLabel: 'タンゴ（情熱的・シャープ）',
-    normal: {
-      icon:'🌺', name:'Okinawan Folk', bpm:76, swing:0.5,
-      kick:  [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
-      snare: [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
-      hihat: [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
-      bassNote:[48,0,0,0,48,0,0,0,43,0,0,0,45,0,0,0],
-      // 琉球音階: ド・ミ・ファ・ソ・シ (C,E,F,G,B)
-      melody:  [60,0,64,0,65,0,67,0,71,0,67,0,65,0,64,0],
-    },
-    imposter: {
-      icon:'🌹', name:'Tango', bpm:110, swing:0.5,
-      kick:  [1,0,0,1,0,0,1,0,1,0,0,1,0,0,1,0],
-      snare: [0,0,1,0,0,1,0,0,0,0,1,0,0,1,0,0],
-      hihat: [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
-      bassNote:[45,0,45,0,41,0,41,0,45,0,45,0,43,0,43,0],
-      melody:  [69,0,68,0,67,0,65,0,64,0,65,0,67,0,68,0],
-    },
-  },
-  // ⑧ R&B vs ポルカ
-  {
-    id: 'rnb_polka',
-    name: '🎹 R&B vs ポルカ',
-    normalLabel:   'R&B（ソウルフル・グルーヴィー）',
-    imposterLabel: 'ポルカ（陽気・2拍子）',
-    normal: {
-      icon:'🎹', name:'R&B Soul', bpm:85, swing:0.63,
-      kick:  [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],
-      snare: [0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0],
-      hihat: [1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,0],
-      bassNote:[48,0,0,48,0,0,48,0,46,0,0,46,0,0,46,0],
-      melody:  [67,0,69,67,65,0,67,0,64,0,65,0,67,65,64,0],
-    },
-    imposter: {
-      icon:'🎊', name:'Polka', bpm:130, swing:0.5, steps:8,
-      kick:  [1,0,1,0,1,0,1,0],
-      snare: [0,1,0,1,0,1,0,1],
-      hihat: [1,1,1,1,1,1,1,1],
-      bassNote:[48,0,52,0,48,0,55,0],
-      melody:  [72,74,76,77,76,74,72,0],
-    },
-  },
-  // ⑨ アフロビート vs ケルト
-  {
-    id: 'afrobeat_celtic',
-    name: '🌍 アフロビート vs ケルト',
-    normalLabel:   'アフロビート（複雑なポリリズム）',
-    imposterLabel: 'ケルト音楽（シンプル・リール）',
-    normal: {
-      icon:'🌍', name:'Afrobeat', bpm:102, swing:0.55,
-      kick:  [1,0,0,1,0,0,1,0,0,0,1,0,0,1,0,0],
-      snare: [0,0,1,0,0,1,0,0,1,0,0,0,1,0,0,1],
-      hihat: [1,1,0,1,0,1,1,0,1,1,0,1,0,1,1,0],
-      bassNote:[48,0,0,48,0,0,50,0,0,48,0,0,48,0,0,46],
-      melody:  [67,0,69,0,67,65,0,67,65,0,62,0,64,0,65,0],
-    },
-    imposter: {
-      icon:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', name:'Celtic Reel', bpm:138, swing:0.5, steps:12,
-      kick:  [1,0,0,1,0,0,1,0,0,1,0,0],
-      snare: [0,0,1,0,0,1,0,0,1,0,0,1],
-      hihat: [1,0,1,0,1,0,1,0,1,0,1,0],
-      bassNote:[52,0,0,55,0,0,52,0,0,48,0,0],
-      melody:  [76,74,72,74,76,79,81,79,76,74,76,72],
-    },
-  },
-  // ⑩ ファンク vs クラシックピアノ
-  {
-    id: 'funk_classical',
-    name: '🎺 ファンク vs クラシック',
-    normalLabel:   'ファンク（16ビート・ノリノリ）',
-    imposterLabel: 'クラシックピアノ（整然・優雅）',
-    normal: {
-      icon:'🎺', name:'Funk', bpm:100, swing:0.57,
-      kick:  [1,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0],
-      snare: [0,0,0,0,1,0,0,1,0,0,0,0,1,0,1,0],
-      hihat: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      bassNote:[43,0,43,0,43,43,0,0,43,0,43,0,41,41,0,0],
-      melody:  [67,0,67,70,67,0,65,0,67,0,67,70,65,0,64,0],
-    },
-    imposter: {
-      icon:'🎼', name:'Classical Piano', bpm:72, swing:0.5,
-      kick:  [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
-      snare: [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
-      hihat: [1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0],
-      bassNote:[48,0,0,0,52,0,0,0,55,0,0,0,52,0,0,0],
-      melody:  [72,71,72,74,76,74,72,71,69,0,72,0,76,0,79,0],
-    },
-  },
+/* ============ TRACK SETS ============ */
+const TRACKS=[
+  {id:'jazz_edm',name:'🎷 Jazz vs EDM',nl:'スウィングジャズ（跳ねるリズム）',il:'4つ打ちEDM（ドンドンドン）',nlEn:'Swing Jazz (bouncy)',ilEn:'4-on-the-floor EDM',
+    normal:{icon:'🎷',name:'Swing Jazz',bpm:120,swing:0.67,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1],bassNote:[55,0,0,55,0,62,0,0,55,0,0,55,0,58,0,0],melody:[69,0,72,0,74,0,72,0,69,0,67,0,65,0,67,0]},
+    imposter:{icon:'🎛️',name:'EDM',bpm:128,swing:0.5,kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],bassNote:[36,0,36,0,36,0,36,0,36,0,36,0,36,0,36,0],melody:[84,0,84,0,84,87,0,84,84,0,84,0,84,87,0,0]}},
+  {id:'waltz_rock',name:'🎻 ワルツ vs ロック',nl:'優雅なワルツ（3拍子）',il:'ヘビーロック（4拍子）',nlEn:'Classic Waltz (3/4)',ilEn:'Heavy Rock (4/4)',
+    normal:{icon:'🎻',name:'Waltz',bpm:90,swing:0.5,steps:12,kick:[1,0,0,0,0,0,1,0,0,0,0,0],snare:[0,0,0,1,0,0,0,0,0,1,0,0],hihat:[1,1,1,1,1,1,1,1,1,1,1,1],bassNote:[48,0,0,55,0,0,48,0,0,53,0,0],melody:[72,0,74,76,0,0,72,0,69,67,0,0]},
+    imposter:{icon:'🎸',name:'Heavy Rock',bpm:120,swing:0.5,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],bassNote:[33,33,0,33,0,33,0,0,33,33,0,33,0,33,33,0],melody:[57,0,57,0,60,0,0,0,57,0,57,0,58,0,0,0]}},
+  {id:'bossa_march',name:'🌴 ボサノバ vs マーチ',nl:'ゆったりボサノバ',il:'軍隊マーチ',nlEn:'Laid-back Bossa Nova',ilEn:'Military March',
+    normal:{icon:'🌴',name:'Bossa Nova',bpm:80,swing:0.5,kick:[1,0,0,0,0,1,0,0,1,0,0,0,0,1,0,0],snare:[0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1],hihat:[1,0,1,0,1,1,0,1,1,0,1,0,1,1,0,1],bassNote:[45,0,0,52,0,0,50,0,45,0,0,52,0,0,47,0],melody:[69,0,72,0,74,72,0,0,69,0,67,0,65,67,0,0]},
+    imposter:{icon:'🥁',name:'Military March',bpm:112,swing:0.5,kick:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],snare:[0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],bassNote:[48,0,48,0,43,0,43,0,48,0,48,0,43,0,43,0],melody:[60,0,64,0,67,0,64,0,60,0,64,0,67,67,67,0]}},
+  {id:'hiphop_samba',name:'🎤 Hip Hop vs サンバ',nl:'Hip Hop（重いグルーヴ）',il:'サンバ（軽快）',nlEn:'Hip Hop (heavy groove)',ilEn:'Samba (upbeat)',
+    normal:{icon:'🎤',name:'Hip Hop',bpm:90,swing:0.62,kick:[1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],hihat:[1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],bassNote:[36,0,0,36,0,0,41,0,36,0,0,36,0,43,0,0],melody:[60,0,60,0,63,0,0,60,58,0,0,58,60,0,0,0]},
+    imposter:{icon:'🇧🇷',name:'Samba',bpm:120,swing:0.5,kick:[1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0],snare:[0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],bassNote:[48,0,52,0,55,0,52,0,48,0,52,0,55,0,52,0],melody:[67,0,69,0,71,0,72,0,71,0,69,0,67,0,65,0]}},
+  {id:'irish_flamenco',name:'☘️ アイルランド民謡 vs フラメンコ',nl:'アイルランド民謡（6/8拍子）',il:'フラメンコ（12拍子）',nlEn:'Irish Jig (6/8)',ilEn:'Flamenco (12-beat)',
+    normal:{icon:'☘️',name:'Irish Jig',bpm:132,swing:0.5,steps:12,kick:[1,0,0,1,0,0,1,0,0,1,0,0],snare:[0,0,1,0,0,1,0,0,1,0,0,1],hihat:[1,1,0,1,1,0,1,1,0,1,1,0],bassNote:[52,0,0,55,0,0,52,0,0,48,0,0],melody:[76,74,72,74,76,79,76,74,72,71,72,74]},
+    imposter:{icon:'💃',name:'Flamenco',bpm:100,swing:0.5,steps:12,kick:[1,0,0,0,1,0,0,1,0,0,1,0],snare:[0,0,1,0,0,0,1,0,0,1,0,0],hihat:[1,0,1,0,1,0,1,0,1,0,1,0],bassNote:[40,0,0,43,0,0,45,0,0,43,0,0],melody:[64,0,65,0,67,0,65,64,62,0,60,0]}},
+  {id:'reggae_techno',name:'🏝️ レゲエ vs テクノ',nl:'レゲエ（オフビート）',il:'テクノ（高速）',nlEn:'Reggae (off-beat)',ilEn:'Techno (fast)',
+    normal:{icon:'🏝️',name:'Reggae',bpm:75,swing:0.5,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],bassNote:[43,0,0,0,43,0,0,43,41,0,0,0,41,0,0,41],melody:[0,0,67,0,0,0,67,0,0,0,65,0,0,0,65,0]},
+    imposter:{icon:'⚙️',name:'Techno',bpm:140,swing:0.5,kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],bassNote:[36,0,36,0,36,0,36,36,36,0,36,0,36,0,36,36],melody:[72,0,0,72,0,0,72,0,75,0,0,75,0,0,75,0]}},
+  {id:'okinawa_tango',name:'🌺 沖縄民謡 vs タンゴ',nl:'沖縄民謡（琉球音階）',il:'タンゴ（情熱的）',nlEn:'Okinawan Folk',ilEn:'Tango (passionate)',
+    normal:{icon:'🌺',name:'Okinawan',bpm:76,swing:0.5,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],bassNote:[48,0,0,0,48,0,0,0,43,0,0,0,45,0,0,0],melody:[60,0,64,0,65,0,67,0,71,0,67,0,65,0,64,0]},
+    imposter:{icon:'🌹',name:'Tango',bpm:110,swing:0.5,kick:[1,0,0,1,0,0,1,0,1,0,0,1,0,0,1,0],snare:[0,0,1,0,0,1,0,0,0,0,1,0,0,1,0,0],hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],bassNote:[45,0,45,0,41,0,41,0,45,0,45,0,43,0,43,0],melody:[69,0,68,0,67,0,65,0,64,0,65,0,67,0,68,0]}},
+  {id:'rnb_polka',name:'🎹 R&B vs ポルカ',nl:'R&B（ソウルフル）',il:'ポルカ（陽気）',nlEn:'R&B (soulful)',ilEn:'Polka (cheerful)',
+    normal:{icon:'🎹',name:'R&B',bpm:85,swing:0.63,kick:[1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0],hihat:[1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,0],bassNote:[48,0,0,48,0,0,48,0,46,0,0,46,0,0,46,0],melody:[67,0,69,67,65,0,67,0,64,0,65,0,67,65,64,0]},
+    imposter:{icon:'🎊',name:'Polka',bpm:130,swing:0.5,steps:8,kick:[1,0,1,0,1,0,1,0],snare:[0,1,0,1,0,1,0,1],hihat:[1,1,1,1,1,1,1,1],bassNote:[48,0,52,0,48,0,55,0],melody:[72,74,76,77,76,74,72,0]}},
+  {id:'afrobeat_celtic',name:'🌍 アフロビート vs ケルト',nl:'アフロビート（ポリリズム）',il:'ケルト（シンプル）',nlEn:'Afrobeat (polyrhythm)',ilEn:'Celtic Reel',
+    normal:{icon:'🌍',name:'Afrobeat',bpm:102,swing:0.55,kick:[1,0,0,1,0,0,1,0,0,0,1,0,0,1,0,0],snare:[0,0,1,0,0,1,0,0,1,0,0,0,1,0,0,1],hihat:[1,1,0,1,0,1,1,0,1,1,0,1,0,1,1,0],bassNote:[48,0,0,48,0,0,50,0,0,48,0,0,48,0,0,46],melody:[67,0,69,0,67,65,0,67,65,0,62,0,64,0,65,0]},
+    imposter:{icon:'🏴',name:'Celtic',bpm:138,swing:0.5,steps:12,kick:[1,0,0,1,0,0,1,0,0,1,0,0],snare:[0,0,1,0,0,1,0,0,1,0,0,1],hihat:[1,0,1,0,1,0,1,0,1,0,1,0],bassNote:[52,0,0,55,0,0,52,0,0,48,0,0],melody:[76,74,72,74,76,79,81,79,76,74,76,72]}},
+  {id:'funk_classical',name:'🎺 ファンク vs クラシック',nl:'ファンク（16ビート）',il:'クラシックピアノ',nlEn:'Funk (16-beat)',ilEn:'Classical Piano',
+    normal:{icon:'🎺',name:'Funk',bpm:100,swing:0.57,kick:[1,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0],snare:[0,0,0,0,1,0,0,1,0,0,0,0,1,0,1,0],hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],bassNote:[43,0,43,0,43,43,0,0,43,0,43,0,41,41,0,0],melody:[67,0,67,70,67,0,65,0,67,0,67,70,65,0,64,0]},
+    imposter:{icon:'🎼',name:'Classical',bpm:72,swing:0.5,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0],bassNote:[48,0,0,0,52,0,0,0,55,0,0,0,52,0,0,0],melody:[72,71,72,74,76,74,72,71,69,0,72,0,76,0,79,0]}},
 ];
 
-const EMOJIS = ['🐶','🦊','🐱','🐼','🐨','🐯','🦁','🐸','🐧','🦋'];
-function uid(){ return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2); }
-function rndRoom(){
-  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
+/* ============ STATE ============ */
+const EMOJIS=['🐶','🦊','🐱','🐼','🐨','🐯','🦁','🐸','🐧','🦋'];
+function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2);}
+function rndRoom(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');}
+
+let G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0};
+
+/* ============ UI HELPERS ============ */
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showErr(msg){const e=document.getElementById('h-err');e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',4000);}
+function setBtn(id,on,txt){const b=document.getElementById(id);if(!b)return;b.disabled=!on;b.innerHTML=on?txt:`<span class="spin-icon"></span>${txt}`;}
+
+function renderCodeChars(code){
+  const el=document.getElementById('l-code-chars');
+  if(!el)return;
+  el.innerHTML=code.split('').map(c=>`<div class="code-char">${c}</div>`).join('');
 }
 
-let G = {
-  myName:'', myUserId:'', myMemberId:'', isHost:false,
-  roomId:'', roomDbId:'', members:[],
-  selTrack: TRACK_SETS[0],
-  isImposter:false, myMusic:null,
-  myVote:'', channel:null,
-  audioCtx:null, beatTimer:null, stepIdx:0,
-};
-
-function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-function showErr(msg){ const e=document.getElementById('h-err'); e.textContent=msg; e.style.display='block'; setTimeout(()=>e.style.display='none',4000); }
-function setBtn(id,on,txt){ const b=document.getElementById(id); if(!b)return; b.disabled=!on; b.innerHTML=on?txt:`<span class="spin"></span>${txt}`; }
-
+/* ============ SUPABASE HELPERS ============ */
 async function fetchMembers(){
-  const {data,error}=await sb.from('room_members')
-    .select('id,user_id,is_imposter,assigned_track_id,vote_target_user_id,users(id,name,icon_url)')
-    .eq('room_id',G.roomDbId);
-  if(error) return;
+  const {data,error}=await sb.from('room_members').select('id,user_id,is_imposter,assigned_track_id,vote_target_user_id,users(id,name,icon_url)').eq('room_id',G.roomDbId);
+  if(error)return;
   const {data:room}=await sb.from('rooms').select('host_id').eq('id',G.roomDbId).single();
-  G.members=data.map(m=>({
-    memberId:m.id, userId:m.user_id,
-    name:m.users?.name||'?', emoji:m.users?.icon_url||'🐶',
-    isHost:m.user_id===room?.host_id,
-    isImposter:m.is_imposter, trackId:m.assigned_track_id,
-    voteTarget:m.vote_target_user_id,
-  }));
+  G.members=data.map(m=>({memberId:m.id,userId:m.user_id,name:m.users?.name||'?',emoji:m.users?.icon_url||'🐶',isHost:m.user_id===room?.host_id,isImposter:m.is_imposter,trackId:m.assigned_track_id,voteTarget:m.vote_target_user_id}));
   renderMembers();
 }
 
+/* ============ HOME ============ */
 async function doCreate(){
   const name=document.getElementById('h-name').value.trim();
-  if(!name){showErr(t('errName'));return;}
-  setBtn('h-create',false,t('creatingRoom'));
+  if(!name){showErr(L('errName'));return;}
+  setBtn('h-create',false,L('hCreating'));
   try{
     const userId=uid();
-    await sb.from('users').insert({id:userId,name,icon_url:EMOJIS[0]});
+    const {error:ue}=await sb.from('users').insert({id:userId,name,icon_url:EMOJIS[0]});
+    if(ue)throw ue;
     const code=rndRoom();
-    const {data:room}=await sb.from('rooms').insert({room_code:code,host_id:userId,status:'waiting',track_set_id:TRACK_SETS[0].id}).select().single();
-    const {data:mem}=await sb.from('room_members').insert({room_id:room.id,user_id:userId}).select().single();
-    Object.assign(G,{myName:name,myUserId:userId,myMemberId:mem.id,isHost:true,roomId:code,roomDbId:room.id,selTrack:TRACK_SETS[0]});
+    const {data:room,error:re}=await sb.from('rooms').insert({room_code:code,host_id:userId,status:'waiting',track_set_id:TRACKS[0].id}).select().single();
+    if(re)throw re;
+    const {data:mem,error:me}=await sb.from('room_members').insert({room_id:room.id,user_id:userId}).select().single();
+    if(me)throw me;
+    Object.assign(G,{myName:name,myUserId:userId,myMemberId:mem.id,isHost:true,roomId:code,roomDbId:room.id,selTrack:TRACKS[0]});
     await openLobby();
-  }catch(e){showErr((currentLang==='en'?'Error: ':'エラー: ')+e.message);}
-  finally{setBtn('h-create',true,t('createRoom'));}
+  }catch(e){showErr(L('errPfx')+e.message);}
+  finally{setBtn('h-create',true,L('hCreate'));}
 }
 
 async function doJoin(){
   const name=document.getElementById('h-name').value.trim();
   const code=document.getElementById('h-code').value.trim().toUpperCase();
-  if(!name){showErr(t('errName'));return;}
-  if(code.length!==6){showErr(t('errCode'));return;}
-  setBtn('h-join',false,t('joiningBtn'));
+  if(!name){showErr(L('errName'));return;}
+  if(code.length!==6){showErr(L('errCode'));return;}
+  setBtn('h-join',false,L('hJoining'));
   try{
     const {data:room,error:re}=await sb.from('rooms').select().eq('room_code',code).single();
-    if(re||!room) throw new Error(t('errNoRoom'));
-    if(room.status!=='waiting') throw new Error(t('errStarted'));
+    if(re||!room)throw new Error(L('errNoRoom'));
+    if(room.status!=='waiting')throw new Error(L('errStarted'));
     const userId=uid();
     const idx=Math.floor(Math.random()*EMOJIS.length);
-    await sb.from('users').insert({id:userId,name,icon_url:EMOJIS[idx]});
-    const {data:mem}=await sb.from('room_members').insert({room_id:room.id,user_id:userId}).select().single();
+    const {error:ue}=await sb.from('users').insert({id:userId,name,icon_url:EMOJIS[idx]});
+    if(ue)throw ue;
+    const {data:mem,error:me}=await sb.from('room_members').insert({room_id:room.id,user_id:userId}).select().single();
+    if(me)throw me;
     Object.assign(G,{myName:name,myUserId:userId,myMemberId:mem.id,isHost:false,roomId:code,roomDbId:room.id});
+    const ts=TRACKS.find(tr=>tr.id===room.track_set_id)||TRACKS[0];
+    G.selTrack=ts;
     await openLobby();
-  }catch(e){showErr((currentLang==='en'?'Error: ':'エラー: ')+e.message);}
-  finally{setBtn('h-join',true,t('joinBtn'));}
+  }catch(e){showErr(L('errPfx')+e.message);}
+  finally{setBtn('h-join',true,L('hJoin'));}
 }
 
+/* ============ LOBBY ============ */
 async function openLobby(){
-  document.getElementById('l-code').textContent=G.roomId;
+  renderCodeChars(G.roomId);
   await fetchMembers();
   renderTrackOpts();
-  document.getElementById('l-host-section').style.display=G.isHost?'block':'none';
-  document.getElementById('l-guest-section').style.display=G.isHost?'none':'block';
+  document.getElementById('l-host-area').style.display=G.isHost?'block':'none';
+  document.getElementById('l-guest-area').style.display=G.isHost?'none':'block';
   subscribeRoom();
   show('s-lobby');
 }
@@ -1028,102 +571,87 @@ async function openLobby(){
 function renderMembers(){
   const el=document.getElementById('l-members');
   const cnt=document.getElementById('l-count');
-  if(el) el.innerHTML=G.members.map(m=>`
-    <div class="member-row">
-      <div class="member-emoji">${m.emoji}</div>
-      <div class="member-name">${m.name}</div>
-      ${m.isHost?'<span class="badge badge-host">HOST</span>':''}
-      ${m.userId===G.myUserId?'<span class="badge badge-you">YOU</span>':''}
-    </div>`).join('');
-  if(cnt) cnt.textContent=`${G.members.length}人`;
+  if(el)el.innerHTML=G.members.map(m=>`<div class="player-row"><div class="player-av">${m.emoji}</div><div class="player-name">${m.name}</div>${m.isHost?'<span class="badge badge-host">HOST</span>':''} ${m.userId===G.myUserId?'<span class="badge badge-you">YOU</span>':''}</div>`).join('');
+  if(cnt)cnt.textContent=lang==='ja'?`${G.members.length}人`:`${G.members.length} players`;
   const sb2=document.getElementById('l-start');
-  if(sb2) sb2.disabled=G.members.length<2;
+  if(sb2)sb2.disabled=G.members.length<2;
 }
 
 function renderTrackOpts(){
   const el=document.getElementById('l-tracks');
-  if(!el) return;
-  el.innerHTML=TRACK_SETS.map((t,i)=>`
-    <label class="track-opt ${i===0?'sel':''}" onclick="pickTrack(${i})">
-      <input type="radio" name="trk" ${i===0?'checked':''}/>
-      <div class="track-opt-info">
-        <div class="track-opt-name">${t.name}</div>
-        <div class="track-opt-normal">👥 全員：${t.normalLabel}</div>
-        <div class="track-opt-imposter">🔴 インポスター：${t.imposterLabel}</div>
-      </div>
-    </label>`).join('');
+  if(!el)return;
+  el.innerHTML=TRACKS.map((tr,i)=>`<label class="track-card ${i===0?'sel':''}" onclick="pickTrack(${i})"><input type="radio" name="trk" ${i===0?'checked':''}><div class="track-card-info"><div class="track-card-name">${tr.name}</div><div class="track-normal">${L('everyoneLabel')}${lang==='ja'?tr.nl:tr.nlEn}</div><div class="track-imp">${L('imposterLabel')}${lang==='ja'?tr.il:tr.ilEn}</div></div></label>`).join('');
 }
 
 function pickTrack(i){
-  G.selTrack=TRACK_SETS[i];
-  document.querySelectorAll('.track-opt').forEach((el,j)=>el.classList.toggle('sel',i===j));
-  sb.from('rooms').update({track_set_id:TRACK_SETS[i].id}).eq('id',G.roomDbId);
+  G.selTrack=TRACKS[i];
+  document.querySelectorAll('.track-card').forEach((el,j)=>el.classList.toggle('sel',i===j));
+  sb.from('rooms').update({track_set_id:TRACKS[i].id}).eq('id',G.roomDbId);
 }
 
+/* ============ REALTIME ============ */
 function subscribeRoom(){
-  if(G.channel) sb.removeChannel(G.channel);
+  if(G.channel)sb.removeChannel(G.channel);
   G.channel=sb.channel('room:'+G.roomDbId)
     .on('postgres_changes',{event:'*',schema:'public',table:'rooms',filter:`id=eq.${G.roomDbId}`},async p=>{
       const s=p.new?.status;
       if(s==='playing'){
         const {data:r}=await sb.from('rooms').select('track_set_id').eq('id',G.roomDbId).single();
-        if(r) G.selTrack=TRACK_SETS.find(ts=>ts.id===r.track_set_id)||TRACK_SETS[0];
-        await fetchMembers();
-        applyMyTrack();
-        startCountdown();
+        if(r)G.selTrack=TRACKS.find(tr=>tr.id===r.track_set_id)||TRACKS[0];
+        await fetchMembers();applyMyTrack();startCountdown();
       }
-      if(s==='voting'){ await fetchMembers(); showVoting(); }
-      if(s==='result'){ await fetchMembers(); showResult(); }
+      if(s==='voting'){await fetchMembers();showVoting();}
+      if(s==='result'){await fetchMembers();showResult();}
     })
-    .on('postgres_changes',{event:'*',schema:'public',table:'room_members',filter:`room_id=eq.${G.roomDbId}`},async()=>{
-      await fetchMembers();
-    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'room_members',filter:`room_id=eq.${G.roomDbId}`},async()=>{await fetchMembers();})
     .subscribe();
 }
 
+/* ============ START ============ */
 async function doStart(){
-  setBtn('l-start',false,t('startingGame'));
+  setBtn('l-start',false,L('lStarting'));
   try{
     await fetchMembers();
     const impIdx=Math.floor(Math.random()*G.members.length);
     const ts=G.selTrack;
     for(let i=0;i<G.members.length;i++){
       const isImp=i===impIdx;
-      await sb.from('room_members').update({
-        is_imposter:isImp,
-        assigned_track_id:isImp?ts.id+'_imposter':ts.id+'_normal',
-      }).eq('id',G.members[i].memberId);
+      await sb.from('room_members').update({is_imposter:isImp,assigned_track_id:isImp?ts.id+'_imposter':ts.id+'_normal'}).eq('id',G.members[i].memberId);
     }
     await sb.from('rooms').update({status:'playing',track_set_id:ts.id}).eq('id',G.roomDbId);
-  }catch(e){ alert('エラー: '+e.message); setBtn('l-start',true,t('startGame')); }
+  }catch(e){alert(L('errPfx')+e.message);setBtn('l-start',true,L('lStart'));}
 }
 
 function applyMyTrack(){
   const me=G.members.find(m=>m.userId===G.myUserId);
   G.isImposter=me?.isImposter||false;
-  G.myMusic=G.isImposter ? G.selTrack.imposter : G.selTrack.normal;
+  G.myMusic=G.isImposter?G.selTrack.imposter:G.selTrack.normal;
 }
 
+/* ============ COUNTDOWN ============ */
 function startCountdown(){
   show('s-countdown');
   let n=3;
   const numEl=document.getElementById('cd-num');
   const msgEl=document.getElementById('cd-msg');
-  numEl.textContent=n;
-  const cdTimer=setInterval(()=>{
+  numEl.textContent=n; msgEl.textContent=L('cdReady');
+  const timer=setInterval(()=>{
     n--;
-    if(n<=0){ clearInterval(cdTimer); numEl.textContent='🎵'; msgEl.textContent=t('playStart'); setTimeout(startPlaying,500); }
-    else{ numEl.textContent=n; msgEl.textContent=n===2?'もうすぐ...':'いくよ！'; }
+    if(n<=0){clearInterval(timer);numEl.textContent='🎵';msgEl.textContent=L('cdPlay');setTimeout(startPlaying,500);}
+    else{numEl.textContent=n;msgEl.textContent=n===2?L('cdAlmost'):L('cdGo');}
   },1000);
 }
 
+/* ============ PLAYING ============ */
 function startPlaying(){
   const m=G.myMusic;
   document.getElementById('p-icon').textContent=m.icon;
   document.getElementById('p-name').textContent=m.name;
   const roleEl=document.getElementById('p-role');
-  if(G.isImposter){ roleEl.textContent=t('roleImposter'); roleEl.className='player-role imposter'; }
-  else{ roleEl.textContent=t('roleNormal'); roleEl.className='player-role normal'; }
+  if(G.isImposter){roleEl.textContent=L('roleImp');roleEl.className='role-badge imposter';}
+  else{roleEl.textContent=L('roleNormal');roleEl.className='role-badge normal';}
+  const vinyl=document.getElementById('p-vinyl');
+  vinyl.style.borderColor=G.isImposter?'var(--coral)':'var(--purple)';
   const steps=m.steps||16;
   document.getElementById('p-beats').innerHTML=Array.from({length:steps},(_,i)=>`<div class="beat-dot" id="bd-${i}"></div>`).join('');
   document.getElementById('p-viz').innerHTML=Array.from({length:14},(_,i)=>`<div class="vbar" id="vb-${i}" style="height:4px;"></div>`).join('');
@@ -1131,93 +659,50 @@ function startPlaying(){
   playMusic();
 }
 
-function mtof(m){ return 440*Math.pow(2,(m-69)/12); }
+function mtof(m){return 440*Math.pow(2,(m-69)/12);}
 
 function playMusic(){
   stopMusic();
-  try{ G.audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
-  catch(e){ return; }
-  const ctx=G.audioCtx, m=G.myMusic, steps=m.steps||16;
-  const secPerBeat=60/m.bpm, stepBase=secPerBeat/4;
+  try{G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return;}
+  const ctx=G.audioCtx,m=G.myMusic,steps=m.steps||16;
+  const spb=60/m.bpm,sb2=spb/4;
   G.stepIdx=0;
-
   function tick(){
-    if(!G.audioCtx) return;
-    const now=ctx.currentTime, si=G.stepIdx%steps;
-    const dur=(si%2===0)? m.swing*2*stepBase : (2-m.swing*2)*stepBase || stepBase;
-
-    if(m.kick[si]){
-      const o=ctx.createOscillator(),g=ctx.createGain(); o.connect(g); g.connect(ctx.destination);
-      o.frequency.setValueAtTime(150,now); o.frequency.exponentialRampToValueAtTime(40,now+0.1);
-      g.gain.setValueAtTime(0.9,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.25);
-      o.type='sine'; o.start(now); o.stop(now+0.25);
-    }
-    if(m.snare[si]){
-      const buf=ctx.createBuffer(1,ctx.sampleRate*0.2,ctx.sampleRate);
-      const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5);
-      const s=ctx.createBufferSource(),g=ctx.createGain(),f=ctx.createBiquadFilter();
-      f.type='highpass'; f.frequency.value=1200;
-      s.buffer=buf; s.connect(f); f.connect(g); g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.55,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2); s.start(now);
-    }
-    if(m.hihat[si]){
-      const buf=ctx.createBuffer(1,ctx.sampleRate*0.06,ctx.sampleRate);
-      const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
-      const s=ctx.createBufferSource(),g=ctx.createGain(),f=ctx.createBiquadFilter();
-      f.type='highpass'; f.frequency.value=8000;
-      s.buffer=buf; s.connect(f); f.connect(g); g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.25,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.06); s.start(now);
-    }
-    if(m.bassNote[si]){
-      const o=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();
-      f.type='lowpass'; f.frequency.value=600;
-      o.frequency.value=mtof(m.bassNote[si]); o.type='sawtooth';
-      o.connect(f); f.connect(g); g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.38,now); g.gain.exponentialRampToValueAtTime(0.001,now+dur*0.9);
-      o.start(now); o.stop(now+dur);
-    }
-    if(m.melody[si]){
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='triangle'; o.frequency.value=mtof(m.melody[si]);
-      o.connect(g); g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.22,now); g.gain.exponentialRampToValueAtTime(0.001,now+dur*0.85);
-      o.start(now); o.stop(now+dur);
-    }
-
+    if(!G.audioCtx)return;
+    const now=ctx.currentTime,si=G.stepIdx%steps;
+    const dur=(si%2===0)?m.swing*2*sb2:(2-m.swing*2)*sb2||sb2;
+    if(m.kick[si]){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.setValueAtTime(150,now);o.frequency.exponentialRampToValueAtTime(40,now+0.1);g.gain.setValueAtTime(0.9,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.25);o.type='sine';o.start(now);o.stop(now+0.25);}
+    if(m.snare[si]){const buf=ctx.createBuffer(1,ctx.sampleRate*0.2,ctx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5);const src=ctx.createBufferSource(),g=ctx.createGain(),f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=1200;src.buffer=buf;src.connect(f);f.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0.55,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.2);src.start(now);}
+    if(m.hihat[si]){const buf=ctx.createBuffer(1,ctx.sampleRate*0.06,ctx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);const src=ctx.createBufferSource(),g=ctx.createGain(),f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=8000;src.buffer=buf;src.connect(f);f.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0.25,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.06);src.start(now);}
+    if(m.bassNote[si]){const o=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=600;o.frequency.value=mtof(m.bassNote[si]);o.type='sawtooth';o.connect(f);f.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0.38,now);g.gain.exponentialRampToValueAtTime(0.001,now+dur*0.9);o.start(now);o.stop(now+dur);}
+    if(m.melody[si]){const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.value=mtof(m.melody[si]);o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0.22,now);g.gain.exponentialRampToValueAtTime(0.001,now+dur*0.85);o.start(now);o.stop(now+dur);}
     const prev=(si-1+steps)%steps;
-    document.getElementById('bd-'+si)?.classList.add(si%4===0?'accent':'active');
-    document.getElementById('bd-'+prev)?.classList.remove('active','accent');
-    for(let i=0;i<14;i++){
-      const vb=document.getElementById('vb-'+i);
-      if(vb){ const h=(m.kick[si]||m.snare[si])?(10+Math.random()*36):(3+Math.random()*10); vb.style.height=h+'px'; vb.style.background=G.isImposter?'var(--danger)':'var(--accent)'; }
-    }
-    G.stepIdx++;
-    G.beatTimer=setTimeout(tick,dur*1000);
+    document.getElementById('bd-'+si)?.classList.add(si%4===0?'strong':'on');
+    document.getElementById('bd-'+prev)?.classList.remove('on','strong');
+    for(let i=0;i<14;i++){const vb=document.getElementById('vb-'+i);if(vb){const h=(m.kick[si]||m.snare[si])?(10+Math.random()*34):(3+Math.random()*10);vb.style.height=h+'px';vb.style.background=G.isImposter?'var(--coral)':'var(--purple)';}}
+    G.stepIdx++;G.beatTimer=setTimeout(tick,dur*1000);
   }
   tick();
 }
 
 function stopMusic(){
-  if(G.beatTimer){ clearTimeout(G.beatTimer); G.beatTimer=null; }
-  if(G.audioCtx){ try{G.audioCtx.close();}catch(e){} G.audioCtx=null; }
+  if(G.beatTimer){clearTimeout(G.beatTimer);G.beatTimer=null;}
+  if(G.audioCtx){try{G.audioCtx.close();}catch(e){}G.audioCtx=null;}
 }
 
+/* ============ DONE ============ */
 async function doDone(){
   stopMusic();
   document.getElementById('p-done').disabled=true;
-  document.getElementById('p-done').textContent=t('waitingOthers');
+  document.getElementById('p-done').textContent=L('pWait');
   await sb.from('room_members').update({is_done:true}).eq('id',G.myMemberId);
-  if(G.isHost) setTimeout(async()=>{ await sb.from('rooms').update({status:'voting'}).eq('id',G.roomDbId); },2500);
+  if(G.isHost)setTimeout(async()=>{await sb.from('rooms').update({status:'voting'}).eq('id',G.roomDbId);},2500);
 }
 
+/* ============ VOTING ============ */
 async function showVoting(){
   await fetchMembers();
-  document.getElementById('v-grid').innerHTML=G.members.map(m=>`
-    <div class="vote-card ${m.userId===G.myUserId?'me':''}" id="vc-${m.userId}"
-      onclick="${m.userId!==G.myUserId?`pickVote('${m.userId}')`:''}" >
-      <div class="vote-emoji">${m.emoji}</div>
-      <div class="vote-name">${m.name}${m.userId===G.myUserId?t('youSuffix'):''}</div>
-    </div>`).join('');
+  document.getElementById('v-grid').innerHTML=G.members.map(m=>`<div class="vote-card ${m.userId===G.myUserId?'me':''}" id="vc-${m.userId}" onclick="${m.userId!==G.myUserId?`pickVote('${m.userId}')`:''}" ><div class="vote-av">${m.emoji}</div><div class="vote-nm">${m.name}</div><div class="vote-tag">${m.userId===G.myUserId?L('youSuffix'):''}</div></div>`).join('');
   show('s-voting');
 }
 function pickVote(uid){
@@ -1227,57 +712,46 @@ function pickVote(uid){
   document.getElementById('v-btn').disabled=false;
 }
 async function doVote(){
-  if(!G.myVote) return;
+  if(!G.myVote)return;
   document.getElementById('v-btn').disabled=true;
-  document.getElementById('v-btn').innerHTML='<span class="spin"></span>'+t('votingBtn');
+  document.getElementById('v-btn').innerHTML=`<span class="spin-icon"></span>${L('vVoting')}`;
   await sb.from('room_members').update({vote_target_user_id:G.myVote}).eq('id',G.myMemberId);
-  document.getElementById('v-btn').textContent=t('votedBtn');
-  if(G.isHost) setTimeout(async()=>{ await sb.from('rooms').update({status:'result'}).eq('id',G.roomDbId); },3000);
+  document.getElementById('v-btn').textContent=L('vVoted');
+  if(G.isHost)setTimeout(async()=>{await sb.from('rooms').update({status:'result'}).eq('id',G.roomDbId);},3000);
 }
 
+/* ============ RESULT ============ */
 async function showResult(){
   await fetchMembers();
   const votes={};
-  G.members.forEach(m=>{ if(m.voteTarget) votes[m.voteTarget]=(votes[m.voteTarget]||0)+1; });
+  G.members.forEach(m=>{if(m.voteTarget)votes[m.voteTarget]=(votes[m.voteTarget]||0)+1;});
   const top=Object.entries(votes).sort((a,b)=>b[1]-a[1])[0];
   const topUid=top?.[0];
   const topMember=G.members.find(m=>m.userId===topUid);
   const realImp=G.members.find(m=>m.isImposter);
   const correct=topUid===realImp?.userId;
-  document.getElementById('r-icon').textContent=correct?'🎉':'😈';
-  document.getElementById('r-title').textContent=correct?t('correctTitle'):t('wrongTitle');
-  document.getElementById('r-sub').textContent=correct
-    ?t('correctSub', topMember?.name)
-    :`最多票の ${topMember?.name||'?'} は無実… 本当のインポスターは別の人！`;
+  document.getElementById('r-outcome').textContent=correct?L('rWin'):L('rLose');
+  document.getElementById('r-outcome').className='result-outcome '+(correct?'win':'lose');
+  document.getElementById('r-big').textContent=correct?L('rWinBig'):L('rLoseBig');
+  const statusEl=document.getElementById('r-status');
+  statusEl.textContent=correct?L('rCaught'):L('rEscaped');
+  statusEl.className='result-status '+(correct?'caught':'escaped');
   document.getElementById('r-imp-emoji').textContent=realImp?.emoji||'❓';
   document.getElementById('r-imp-name').textContent=realImp?.name||'---';
-  document.getElementById('r-imp-track').textContent=G.selTrack.imposterLabel;
+  document.getElementById('r-imp-track').textContent=lang==='ja'?G.selTrack.il:G.selTrack.ilEn;
   const sorted=[...G.members].sort((a,b)=>(votes[b.userId]||0)-(votes[a.userId]||0));
-  document.getElementById('r-rows').innerHTML=sorted.map(m=>`
-    <div class="result-row ${m.isImposter?'imp':''} ${m.userId===topUid?'top':''}">
-      <div style="font-size:20px;">${m.emoji}</div>
-      <div class="result-row-info">
-        <div class="result-row-name">${m.name}${m.isImposter?' 🔴':''}${m.userId===G.myUserId?' (あなた)':''}</div>
-        <div class="result-row-track">${m.isImposter?G.isImposter?G.selTrack.imposterLabel:G.selTrack.normalLabel}</div>
-      </div>
-      <div class="result-votes">${votes[m.userId]||0}票</div>
-    </div>`).join('');
+  document.getElementById('r-rows').innerHTML=sorted.map(m=>`<div class="result-row ${m.isImposter?'imp-row':''} ${m.userId===topUid?'top-row':''}"><div class="res-av">${m.emoji}</div><div class="res-info"><div class="res-name">${m.name}${m.isImposter?' 🔴':''}</div><div class="res-track">${m.isImposter?(lang==='ja'?G.selTrack.il:G.selTrack.ilEn):(lang==='ja'?G.selTrack.nl:G.selTrack.nlEn)}</div></div><div class="res-votes">${votes[m.userId]||0}票</div></div>`).join('');
   show('s-result');
 }
 
+/* ============ HOME ============ */
 function goHome(){
   stopMusic();
-  if(G.channel){ sb.removeChannel(G.channel); }
-  G={ myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],
-      selTrack:TRACK_SETS[0],isImposter:false,myMusic:null,myVote:'',channel:null,
-      audioCtx:null,beatTimer:null,stepIdx:0 };
+  if(G.channel){sb.removeChannel(G.channel);}
+  G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0};
   document.getElementById('h-name').value='';
   document.getElementById('h-code').value='';
   show('s-home');
-}
-
-function showPrivacy(){
-  alert(`プライバシーポリシー\n\n本サービスはGoogle AdSenseを使用しています。\n・Cookie を使用した広告配信を行っています\n・個人情報の収集は行いません\n・子供向けコンテンツのため不適切な広告は除外されます\n\nお問い合わせ: your@email.com`);
 }
 </script>
 </body>
