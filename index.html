@@ -55,11 +55,90 @@
     #ad-top    { grid-column: 2; grid-row: 1; }
     #ad-bottom { padding: 16px; }
 
-    /* スマホ：サイド広告を非表示 */
+    /* ===== スマホ対応 ===== */
     @media (max-width: 900px) {
       #layout { grid-template-columns: 1fr; }
       #ad-left, #ad-right { display: none; }
       #main { grid-column: 1; }
+    }
+
+    /* スマホ全般 */
+    @media (max-width: 600px) {
+      #app { padding: 12px; }
+
+      /* ロゴ */
+      .logo { padding: 12px 0 4px; }
+      .logo-title { font-size: 22px; }
+
+      /* 言語ボタンがコンテンツに被らないようトップ余白 */
+      #s-home .logo { margin-top: 36px; }
+
+      /* カード */
+      .card { padding: 14px; border-radius: 12px; margin-bottom: 10px; }
+
+      /* ボタン */
+      .btn { padding: 13px; font-size: 14px; border-radius: 10px; }
+
+      /* ルームコード */
+      .room-code { padding: 14px; }
+      .room-code-num { font-size: 34px; letter-spacing: 5px; }
+
+      /* カウントダウン */
+      .countdown-big { font-size: 90px; }
+      .countdown-sub { font-size: 14px; }
+
+      /* プレイヤー */
+      .player-hero { padding: 18px 12px 14px; }
+      .player-genre-icon { font-size: 40px; }
+      .player-genre-name { font-size: 17px; }
+      .player-role { font-size: 12px; }
+
+      /* 投票グリッド：スマホでも2列維持しつつ余白調整 */
+      .vote-grid { gap: 8px; }
+      .vote-card { padding: 12px 8px; border-radius: 10px; }
+      .vote-emoji { font-size: 24px; margin-bottom: 4px; }
+      .vote-name { font-size: 12px; }
+
+      /* 結果 */
+      .result-hero { padding: 16px 12px; }
+      .result-icon { font-size: 48px; }
+      .result-title { font-size: 20px; }
+      .result-sub { font-size: 13px; }
+
+      /* トラック選択 */
+      .track-opt { padding: 10px; gap: 8px; }
+      .track-opt-name { font-size: 13px; }
+      .track-opt-normal, .track-opt-imposter { font-size: 10px; }
+
+      /* ビート */
+      .beat-dot { width: 12px; height: 12px; }
+      .beat-grid { gap: 4px; }
+
+      /* ヒントボックス */
+      .hint-box { font-size: 12px; }
+
+      /* フェーズドット */
+      .phase-dots { padding: 4px 0 10px; }
+
+      /* 広告トップ */
+      .ad-top-banner { height: 60px; }
+
+      /* フッター */
+      #footer { font-size: 10px; padding: 12px; }
+
+      /* 言語ボタン小さく */
+      #lang-switcher { top: 8px; right: 8px; gap: 4px; }
+      #lang-switcher button { padding: 4px 8px; font-size: 11px; }
+    }
+
+    /* 極小スマホ (iPhone SE等 375px以下) */
+    @media (max-width: 375px) {
+      .room-code-num { font-size: 28px; letter-spacing: 3px; }
+      .countdown-big { font-size: 72px; }
+      .vote-card { padding: 10px 6px; }
+      .vote-emoji { font-size: 20px; }
+      .vote-name { font-size: 11px; }
+      .card { padding: 12px; }
     }
 
     /* ===== 広告スタイル ===== */
@@ -248,7 +327,7 @@
     <div id="app">
 
       <!-- HOME -->
-      <div id="s-home" class="screen active">
+      <div id="s-home" class="screen active" style="padding-top:0;">
         <div class="logo">
           <div class="logo-title">🎵 リズム<span style="color:var(--accent2)">インポスター</span></div>
           <div data-key="logoSub" style="font-size:11px;color:var(--text3);margin-top:3px;">音楽でインポスターを見つけ出せ！</div>
@@ -912,7 +991,7 @@ async function doCreate(){
     const {data:mem}=await sb.from('room_members').insert({room_id:room.id,user_id:userId}).select().single();
     Object.assign(G,{myName:name,myUserId:userId,myMemberId:mem.id,isHost:true,roomId:code,roomDbId:room.id,selTrack:TRACK_SETS[0]});
     await openLobby();
-  }catch(e){showErr('エラー: '+e.message);}
+  }catch(e){showErr((currentLang==='en'?'Error: ':'エラー: ')+e.message);}
   finally{setBtn('h-create',true,t('createRoom'));}
 }
 
@@ -932,7 +1011,7 @@ async function doJoin(){
     const {data:mem}=await sb.from('room_members').insert({room_id:room.id,user_id:userId}).select().single();
     Object.assign(G,{myName:name,myUserId:userId,myMemberId:mem.id,isHost:false,roomId:code,roomDbId:room.id});
     await openLobby();
-  }catch(e){showErr('エラー: '+e.message);}
+  }catch(e){showErr((currentLang==='en'?'Error: ':'エラー: ')+e.message);}
   finally{setBtn('h-join',true,t('joinBtn'));}
 }
 
@@ -988,7 +1067,7 @@ function subscribeRoom(){
       const s=p.new?.status;
       if(s==='playing'){
         const {data:r}=await sb.from('rooms').select('track_set_id').eq('id',G.roomDbId).single();
-        if(r) G.selTrack=TRACK_SETS.find(t=>t.id===r.track_set_id)||TRACK_SETS[0];
+        if(r) G.selTrack=TRACK_SETS.find(ts=>ts.id===r.track_set_id)||TRACK_SETS[0];
         await fetchMembers();
         applyMyTrack();
         startCountdown();
@@ -1031,9 +1110,9 @@ function startCountdown(){
   const numEl=document.getElementById('cd-num');
   const msgEl=document.getElementById('cd-msg');
   numEl.textContent=n;
-  const t=setInterval(()=>{
+  const cdTimer=setInterval(()=>{
     n--;
-    if(n<=0){ clearInterval(t); numEl.textContent='🎵'; msgEl.textContent=t('playStart'); setTimeout(startPlaying,500); }
+    if(n<=0){ clearInterval(cdTimer); numEl.textContent='🎵'; msgEl.textContent=t('playStart'); setTimeout(startPlaying,500); }
     else{ numEl.textContent=n; msgEl.textContent=n===2?'もうすぐ...':'いくよ！'; }
   },1000);
 }
