@@ -220,6 +220,13 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
         <div class="hero-title">Music Imposter</div>
         <div class="hero-sub" id="h-sub">リズムに乗ってインポスターを見つけ出せ！</div>
         <div class="hero-badge" id="h-badge">✅ 無料 · 3〜10人でプレイ</div>
+        <!-- iOS音声解除ボタン（iOSのみ表示） -->
+        <div id="ios-audio-banner" style="display:none;margin-top:12px;">
+          <button onclick="initIOSAudio()" style="padding:10px 24px;background:rgba(249,112,102,0.15);color:var(--coral);border:1.5px solid rgba(249,112,102,0.4);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;width:100%;">
+            🔊 iPhoneの方：ここをタップして音声を有効化
+          </button>
+          <div id="ios-audio-ok" style="display:none;text-align:center;font-size:12px;color:var(--mint);margin-top:6px;">✅ 音声が有効になりました！</div>
+        </div>
       </div>
 
       <div class="section-label" id="h-name-label">あなたの名前</div>
@@ -298,23 +305,29 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
     <div id="s-playing" class="screen">
       <div class="phase-dots"><div class="pdot done"></div><div class="pdot done"></div><div class="pdot now"></div><div class="pdot"></div></div>
 
-      <!-- 再生オーバーレイ：ホストのみボタン表示、ゲストは自動 -->
-      <div id="p-tap-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(13,13,18,0.97);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
-        <div style="font-size:52px;">🎵</div>
-        <div style="font-size:20px;font-weight:800;color:var(--text);" id="p-tap-title">あなたの曲</div>
-        <div style="font-size:14px;color:var(--text2);" id="p-tap-sub">もうすぐ再生が始まります</div>
-        <!-- ホストのみ表示 -->
-        <div id="p-host-play-btn" style="display:none;">
-          <button onclick="tapToPlay()" style="margin-top:8px;padding:18px 48px;background:linear-gradient(135deg,var(--purple),#6d28d9);color:#fff;border:none;border-radius:16px;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 8px 32px var(--purple-glow);">
-            ▶️ 再生する
-          </button>
-          <div style="font-size:12px;color:var(--text3);margin-top:12px;text-align:center;">ホストが再生を押すと全員同時に始まります</div>
+      <!-- 再生オーバーレイ -->
+      <div id="p-tap-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(13,13,18,0.97);z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;">
+        <!-- ① ホスト：再生ボタン画面 -->
+        <div id="p-state-host" style="display:none;flex-direction:column;align-items:center;gap:20px;">
+          <div style="font-size:48px;">🎵</div>
+          <div style="font-size:18px;font-weight:800;color:var(--text);" id="p-tap-title">あなたの曲</div>
+          <button onclick="tapToPlay()" style="padding:18px 48px;background:linear-gradient(135deg,var(--purple),#6d28d9);color:#fff;border:none;border-radius:16px;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 8px 32px var(--purple-glow);">▶️ 再生する</button>
+          <div style="font-size:12px;color:var(--text3);text-align:center;">押すと全員同時にカウントダウンが始まります</div>
         </div>
-        <!-- ゲスト待機表示 -->
-        <div id="p-guest-wait-play" style="display:none;text-align:center;">
+        <!-- ② ゲスト：ホスト待機画面 -->
+        <div id="p-state-guest" style="display:none;flex-direction:column;align-items:center;gap:16px;">
+          <div style="font-size:48px;">🎵</div>
+          <div style="font-size:18px;font-weight:800;color:var(--text);" id="p-tap-title-g">あなたの曲</div>
           <div style="font-size:14px;color:var(--text2);animation:pulse 1.5s ease-in-out infinite;">ホストが再生を開始するまで待ってね...</div>
         </div>
-        <div style="font-size:12px;color:var(--text3);margin-top:4px;" id="p-tap-timer-pre">30秒後に自動で投票へ</div>
+        <!-- ③ 全員：カウントダウン画面（iOSはここでタップ） -->
+        <div id="p-state-cd" style="display:none;flex-direction:column;align-items:center;gap:16px;">
+          <div id="p-cd-num" style="font-size:96px;font-weight:900;font-family:monospace;background:linear-gradient(135deg,var(--purple2),var(--mint));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;">3</div>
+          <div id="p-cd-msg" style="font-size:16px;color:var(--text2);">準備して！</div>
+          <!-- iOSのみタップボタンを表示 -->
+          <button id="p-ios-tap" onclick="unlockIOSAudio()" style="display:none;padding:12px 28px;background:rgba(139,92,246,0.2);color:var(--purple2);border:1.5px solid var(--purple);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">🔊 音を有効化（iOSのみ）</button>
+        </div>
+        <div style="font-size:12px;color:var(--text3);" id="p-tap-timer-pre">30秒後に自動で投票へ</div>
       </div>
 
       <div class="play-hero">
@@ -396,6 +409,31 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+/* ============ iOS AUDIO INIT ============ */
+(function(){
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  if(isIOS){
+    const banner=document.getElementById('ios-audio-banner');
+    if(banner)banner.style.display='block';
+  }
+})();
+
+function initIOSAudio(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const buf=ctx.createBuffer(1,1,22050);
+    const src=ctx.createBufferSource();
+    src.buffer=buf;src.connect(ctx.destination);src.start(0);
+    ctx.resume().then(()=>{
+      // グローバルに保持
+      window._iosAudioCtx=ctx;
+      document.getElementById('ios-audio-banner').style.display='none';
+      document.getElementById('ios-audio-ok').style.display='block';
+      setTimeout(()=>document.getElementById('ios-audio-ok').style.display='none',2000);
+    });
+  }catch(e){console.warn('iOS audio init failed',e);}
+}
+
 /* ============ SUPABASE ============ */
 const SUPA_URL='https://orhtqozyagxipngaklsy.supabase.co';
 const SUPA_KEY='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
@@ -802,42 +840,6 @@ function startCountdown(playAtISO){
 }
 
 /* ============ PLAYING ============ */
-function startPlaying(){
-  const m=G.myMusic;
-  document.getElementById('p-icon').textContent=m.icon;
-  document.getElementById('p-name').textContent=m.name;
-  document.getElementById('p-tap-title').textContent='🎵 '+m.name;
-  const roleEl=document.getElementById('p-role');
-  roleEl.textContent='🎵 '+m.name;
-  roleEl.className='role-badge normal';
-  const vinyl=document.getElementById('p-vinyl');
-  vinyl.style.borderColor='var(--purple)';
-  const steps=m.steps||16;
-  document.getElementById('p-beats').innerHTML=Array.from({length:steps},(_,i)=>`<div class="beat-dot" id="bd-${i}"></div>`).join('');
-  document.getElementById('p-viz').innerHTML=Array.from({length:14},(_,i)=>`<div class="vbar" id="vb-${i}" style="height:4px;"></div>`).join('');
-
-  // オーバーレイ表示
-  const overlay=document.getElementById('p-tap-overlay');
-  if(overlay)overlay.style.display='flex';
-  const hostBtn=document.getElementById('p-host-play-btn');
-  const guestWait=document.getElementById('p-guest-wait-play');
-  if(G.isHost){
-    if(hostBtn)hostBtn.style.display='block';
-    if(guestWait)guestWait.style.display='none';
-  } else {
-    if(hostBtn)hostBtn.style.display='none';
-    if(guestWait)guestWait.style.display='block';
-    // ゲストはホストのtapToPlay後にDBのplay_music_atを監視して自動再生
-    waitForHostPlay();
-  }
-  show('s-playing');
-
-  // 15秒タイマーはtapToPlay後に開始
-  G.playStartTime=Date.now();
-
-  // 15秒後に強制投票（タップしなくても進む）
-  G.forceVoteTimer=setTimeout(()=>forceGoVoting(),30000);
-
 async function forceGoVoting(){
   stopMusic();
   const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
@@ -846,101 +848,164 @@ async function forceGoVoting(){
   await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({status:'voting'})});
 }
 
-  // 残り時間UI
-  let timeLeft=30;
-  const timerEl=document.getElementById('p-timer');
-  const preEl=document.getElementById('p-tap-timer-pre');
-  if(timerEl)timerEl.textContent=timeLeft;
-  const uiTimer=setInterval(()=>{
-    timeLeft--;
-    const t=Math.max(0,timeLeft);
-    if(timerEl)timerEl.textContent=t;
-    if(preEl)preEl.textContent=t+'秒後に自動で投票へ';
-    if(timeLeft<=0){
-      clearInterval(uiTimer);
-      forceGoVoting(); // UIカウント0で即遷移
-    }
-  },1000);
-  G.uiTimer=uiTimer;
+function showOverlayState(state){
+  ['p-state-host','p-state-guest','p-state-cd'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.style.display='none';
+  });
+  const el=document.getElementById('p-state-'+state);
+  if(el)el.style.display='flex';
+  const overlay=document.getElementById('p-tap-overlay');
+  if(overlay)overlay.style.display='flex';
+}
+
+function startPlaying(){
+  const m=G.myMusic;
+  document.getElementById('p-icon').textContent=m.icon;
+  document.getElementById('p-name').textContent=m.name;
+  const titleEl=document.getElementById(G.isHost?'p-tap-title':'p-tap-title-g');
+  if(titleEl)titleEl.textContent='🎵 '+m.name;
+  const roleEl=document.getElementById('p-role');
+  roleEl.textContent='🎵 '+m.name;
+  roleEl.className='role-badge normal';
+  document.getElementById('p-vinyl').style.borderColor='var(--purple)';
+  const steps=m.steps||16;
+  document.getElementById('p-beats').innerHTML=Array.from({length:steps},(_,i)=>`<div class="beat-dot" id="bd-${i}"></div>`).join('');
+  document.getElementById('p-viz').innerHTML=Array.from({length:14},(_,i)=>`<div class="vbar" id="vb-${i}" style="height:4px;"></div>`).join('');
+  show('s-playing');
+
+  if(G.isHost){
+    // ホスト：再生ボタンを表示
+    showOverlayState('host');
+  } else {
+    // ゲスト：待機画面を表示してDBを監視
+    showOverlayState('guest');
+    waitForHostPlay();
+  }
 }
 
 function tapToPlay(){
-  // ホストが押したらDBに通知→全員同時再生
-  const overlay=document.getElementById('p-tap-overlay');
-  if(overlay)overlay.style.display='none';
-  // DBにplay_music_at（3.5秒後）を保存して全員に同期
+  // ホストが押した → play_atをDBに保存（3秒後）→ カウントダウン開始
   const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
   const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
   const hdrs={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=minimal'};
-  const musicAt=new Date(Date.now()+3500).toISOString();
-  fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({play_at:musicAt})});
-  // ホスト自身もカウントダウン開始
-  startMusicCountdown(musicAt);
+  const playAt=new Date(Date.now()+3500).toISOString();
+  fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({play_at:playAt})});
+  startMusicCountdown(playAt);
 }
 
-// ゲスト: DBのplay_atを監視して自動再生
 let G_musicWaitTimer=null;
 function waitForHostPlay(){
+  if(G_musicWaitTimer)clearInterval(G_musicWaitTimer);
   G_musicWaitTimer=setInterval(async()=>{
-    const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
-    const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
-    const headers={'apikey':key,'Authorization':'Bearer '+key};
-    const r=await fetch(base+'/rooms?select=play_at&id=eq.'+G.roomDbId,{headers});
-    const data=await r.json();
-    const playAt=data[0]?.play_at;
-    if(playAt){
-      clearInterval(G_musicWaitTimer);
-      const overlay=document.getElementById('p-tap-overlay');
-      if(overlay)overlay.style.display='none';
-      startMusicCountdown(playAt);
-    }
+    try{
+      const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
+      const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+      const headers={'apikey':key,'Authorization':'Bearer '+key};
+      const r=await fetch(base+'/rooms?select=play_at&id=eq.'+G.roomDbId,{headers});
+      const data=await r.json();
+      const playAt=data[0]?.play_at;
+      if(playAt&&new Date(playAt).getTime()>Date.now()-5000){
+        clearInterval(G_musicWaitTimer);
+        G_musicWaitTimer=null;
+        startMusicCountdown(playAt);
+      }
+    }catch(e){}
   },500);
+}
+
+function unlockIOSAudio(){
+  try{
+    if(!G.audioCtx||G.audioCtx.state==='closed'){
+      G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    }
+    if(G.audioCtx.state==='suspended')G.audioCtx.resume();
+    const buf=G.audioCtx.createBuffer(1,1,22050);
+    const src=G.audioCtx.createBufferSource();
+    src.buffer=buf;src.connect(G.audioCtx.destination);src.start(0);
+    document.getElementById('p-ios-tap').style.display='none';
+  }catch(e){}
 }
 
 function startMusicCountdown(playAtISO){
   const playAt=new Date(playAtISO).getTime();
-  // カウントダウンオーバーレイを再利用
-  const overlay=document.getElementById('p-tap-overlay');
-  const titleEl=document.getElementById('p-tap-title');
-  const subEl=document.getElementById('p-tap-sub');
-  const hostBtn=document.getElementById('p-host-play-btn');
-  const guestWait=document.getElementById('p-guest-wait-play');
-  if(hostBtn)hostBtn.style.display='none';
-  if(guestWait)guestWait.style.display='none';
-  if(overlay)overlay.style.display='flex';
+  showOverlayState('cd');
 
+  // iOS検出→タップボタン表示
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  const iosBtn=document.getElementById('p-ios-tap');
+  if(iosBtn)iosBtn.style.display=isIOS?'block':'none';
+
+  // AudioContext事前起動（非iOS）
+  try{
+    if(!G.audioCtx||G.audioCtx.state==='closed'){
+      G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    }
+    if(G.audioCtx.state==='suspended')G.audioCtx.resume();
+  }catch(e){}
+
+  const numEl=document.getElementById('p-cd-num');
+  const msgEl=document.getElementById('p-cd-msg');
+  // setInterval で確実に動かす（setTimeout より安定）
   let musicStarted=false;
-  function tick(){
+  const cdInterval=setInterval(()=>{
     const remaining=playAt-Date.now();
     if(remaining<=0){
-      if(!musicStarted){
-        musicStarted=true;
-        if(titleEl){titleEl.textContent='🎵';titleEl.style.fontSize='80px';}
-        if(subEl)subEl.textContent='';
-        setTimeout(()=>{
-          if(overlay)overlay.style.display='none';
-          playMusic();
-        },200);
-      }
+      clearInterval(cdInterval);
+      if(musicStarted)return;
+      musicStarted=true;
+      if(numEl)numEl.textContent='🎵';
+      if(msgEl)msgEl.textContent='スタート！';
+      setTimeout(()=>{
+        const overlay=document.getElementById('p-tap-overlay');
+        if(overlay)overlay.style.display='none';
+        // iOS AudioContext再利用または新規作成
+        try{
+          if(window._iosAudioCtx&&window._iosAudioCtx.state!=='closed'){
+            G.audioCtx=window._iosAudioCtx;
+          }
+          if(!G.audioCtx||G.audioCtx.state==='closed'){
+            G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+          }
+          if(G.audioCtx.state==='suspended')G.audioCtx.resume();
+        }catch(e){}
+        // 30秒後に強制投票
+        G.forceVoteTimer=setTimeout(()=>forceGoVoting(),30000);
+        // 残り時間UIカウント
+        let timeLeft=30;
+        const timerEl=document.getElementById('p-timer');
+        const preEl=document.getElementById('p-tap-timer-pre');
+        if(timerEl)timerEl.textContent=timeLeft;
+        const uiTimer=setInterval(()=>{
+          timeLeft--;
+          const t=Math.max(0,timeLeft);
+          if(timerEl)timerEl.textContent=t;
+          if(preEl)preEl.textContent=t+'秒後に自動で投票へ';
+          if(timeLeft<=0){clearInterval(uiTimer);forceGoVoting();}
+        },1000);
+        G.uiTimer=uiTimer;
+        playMusic();
+      },300);
       return;
     }
     const secs=Math.ceil(remaining/1000);
     const labels={3:'準備して！',2:'もうすぐ…',1:'いくよ！'};
-    if(titleEl){
-      titleEl.textContent=labels[secs]||String(secs);
-      titleEl.style.fontSize='72px';
-    }
-    if(subEl)subEl.textContent='';
-    setTimeout(tick,50); // 50msで精度アップ
-  }
-  tick();
+    if(numEl)numEl.textContent=labels[secs]||String(secs);
+    if(msgEl)msgEl.textContent='';
+  },100);
 }
+
+
 
 function mtof(m){return 440*Math.pow(2,(m-69)/12);}
 
 function playMusic(){
   if(G.beatTimer){clearTimeout(G.beatTimer);G.beatTimer=null;}
   try{
+    // iOS事前初期化したContextを再利用
+    if(window._iosAudioCtx&&window._iosAudioCtx.state!=='closed'){
+      G.audioCtx=window._iosAudioCtx;
+    }
     if(!G.audioCtx||G.audioCtx.state==='closed'){
       G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
     }
