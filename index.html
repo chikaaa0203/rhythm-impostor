@@ -290,6 +290,7 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
         <div class="cd-label" id="cd-top">全員で一緒に聴こう！</div>
         <div class="cd-num" id="cd-num">3</div>
         <div class="cd-msg" id="cd-msg">準備して...</div>
+        <button id="cd-unlock" onclick="unlockAudio()" style="display:none;padding:12px 24px;background:var(--purple);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;">🔊 タップして音を有効化</button>
       </div>
     </div>
 
@@ -310,6 +311,10 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'P
       </div>
       <div class="hint-card" id="p-hint">
         周りの人のリズム・テンポ・ノリを感じてみよう。<strong>明らかに違う</strong>と感じる人がいればインポスターかも？
+      </div>
+      <div style="text-align:center;margin-top:10px;">
+        <span style="font-size:13px;color:var(--text3);">残り時間</span>
+        <div id="p-timer" style="font-size:36px;font-weight:900;color:var(--purple2);font-family:monospace;line-height:1.2;">15</div>
       </div>
       <div class="spacer"></div>
       <button class="btn btn-success" id="p-done" onclick="doDone()" style="margin-top:12px;">✅ 聞き終わった！</button>
@@ -497,7 +502,7 @@ const EMOJIS=['🐶','🦊','🐱','🐼','🐨','🐯','🦁','🐸','🐧','�
 function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2);}
 function rndRoom(){return (''+Math.floor(1000+Math.random()*9000));}
 
-let G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0};
+let G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0,playAt:0,forceVoteTimer:null,uiTimer:null};
 
 /* ============ UI HELPERS ============ */
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
@@ -518,7 +523,7 @@ async function fetchMembers(){
     const headers={'apikey':key,'Authorization':'Bearer '+key};
     const mRes=await fetch(base+'/room_members?select=id,user_id,is_imposter,assigned_track_id,vote_target_user_id,users!room_members_user_id_fkey(id,name,icon_url)&room_id=eq.'+G.roomDbId,{headers});
     const members=await mRes.json();
-    const rRes=await fetch(base+'/rooms?select=host_id,status,track_set_id&id=eq.'+G.roomDbId,{headers});
+    const rRes=await fetch(base+'/rooms?select=host_id,status,track_set_id,play_at&id=eq.'+G.roomDbId,{headers});
     const rooms=await rRes.json();
     const room=rooms[0];
     if(Array.isArray(members)&&room){
@@ -637,7 +642,7 @@ async function poll(){
     const members=await mRes.json();
 
     // ルーム取得
-    const rRes=await fetch(base+'/rooms?select=host_id,status,track_set_id&id=eq.'+G.roomDbId,{headers});
+    const rRes=await fetch(base+'/rooms?select=host_id,status,track_set_id,play_at&id=eq.'+G.roomDbId,{headers});
     const rooms=await rRes.json();
     const room=rooms[0];
 
@@ -689,16 +694,20 @@ async function doStart(){
   setBtn('l-start',false,L('lStarting'));
   try{
     await fetchMembers();
-    // ランダムで曲セット選択
     const randomTrack=TRACKS[Math.floor(Math.random()*TRACKS.length)];
     G.selTrack=randomTrack;
     const impIdx=Math.floor(Math.random()*G.members.length);
     const ts=randomTrack;
+    const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
+    const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+    const hdrs={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=minimal'};
     for(let i=0;i<G.members.length;i++){
       const isImp=i===impIdx;
-      await sb.from('room_members').update({is_imposter:isImp,assigned_track_id:isImp?ts.id+'_imposter':ts.id+'_normal'}).eq('id',G.members[i].memberId);
+      await fetch(base+'/room_members?id=eq.'+G.members[i].memberId,{method:'PATCH',headers:hdrs,body:JSON.stringify({is_imposter:isImp,assigned_track_id:isImp?ts.id+'_imposter':ts.id+'_normal',is_done:false,vote_target_user_id:null})});
     }
-    await sb.from('rooms').update({status:'playing',track_set_id:ts.id}).eq('id',G.roomDbId);
+    // play_at = 今から4秒後（カウントダウン3秒+バッファ1秒）
+    const playAt=new Date(Date.now()+4000).toISOString();
+    await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({status:'playing',track_set_id:ts.id,play_at:playAt})});
   }catch(e){alert(L('errPfx')+e.message);setBtn('l-start',true,L('lStart'));}
 }
 
@@ -709,17 +718,60 @@ function applyMyTrack(){
 }
 
 /* ============ COUNTDOWN ============ */
-function startCountdown(){
+function unlockAudio(){
+  try{
+    if(!G.audioCtx||G.audioCtx.state==='closed'){
+      G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    }
+    if(G.audioCtx.state==='suspended'){G.audioCtx.resume();}
+    // 無音を鳴らしてiOSを起こす
+    const buf=G.audioCtx.createBuffer(1,1,22050);
+    const src=G.audioCtx.createBufferSource();
+    src.buffer=buf; src.connect(G.audioCtx.destination); src.start(0);
+    document.getElementById('cd-unlock').style.display='none';
+    document.getElementById('cd-unlock').textContent='🔊 準備完了！';
+  }catch(e){console.warn('audio unlock failed',e);}
+}
+
+function startCountdown(playAtISO){
   show('s-countdown');
-  let n=3;
+
+  // AudioContext事前起動
+  try{
+    if(!G.audioCtx||G.audioCtx.state==='closed'){
+      G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    }
+    if(G.audioCtx.state==='suspended'){G.audioCtx.resume();}
+  }catch(e){}
+
+  // iOS検出 → タップボタン表示
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  if(isIOS){
+    const btn=document.getElementById('cd-unlock');
+    if(btn)btn.style.display='block';
+  }
+
   const numEl=document.getElementById('cd-num');
   const msgEl=document.getElementById('cd-msg');
-  numEl.textContent=n; msgEl.textContent=L('cdReady');
-  const timer=setInterval(()=>{
-    n--;
-    if(n<=0){clearInterval(timer);numEl.textContent='🎵';msgEl.textContent=L('cdPlay');setTimeout(startPlaying,500);}
-    else{numEl.textContent=n;msgEl.textContent=n===2?L('cdAlmost'):L('cdGo');}
-  },1000);
+
+  // play_atまでの残り時間を計算してカウントダウン表示
+  const playAt=playAtISO?new Date(playAtISO).getTime():Date.now()+4000;
+  G.playAt=playAt; // 後でplayMusicで使う
+
+  function updateCountdown(){
+    const remaining=playAt-Date.now();
+    if(remaining<=0){
+      numEl.textContent='🎵';
+      msgEl.textContent=L('cdPlay');
+      startPlaying();
+      return;
+    }
+    const secs=Math.ceil(remaining/1000);
+    numEl.textContent=secs<=3?secs:'🎵';
+    msgEl.textContent=secs>3?L('cdReady'):secs===3?L('cdReady'):secs===2?L('cdAlmost'):L('cdGo');
+    setTimeout(updateCountdown,100);
+  }
+  updateCountdown();
 }
 
 /* ============ PLAYING ============ */
@@ -737,13 +789,38 @@ function startPlaying(){
   document.getElementById('p-viz').innerHTML=Array.from({length:14},(_,i)=>`<div class="vbar" id="vb-${i}" style="height:4px;"></div>`).join('');
   show('s-playing');
   playMusic();
+  // 15秒カウントダウン表示
+  let timeLeft=15;
+  const timerEl=document.getElementById('p-timer');
+  if(timerEl)timerEl.textContent=timeLeft;
+  const uiTimer=setInterval(()=>{
+    timeLeft--;
+    if(timerEl)timerEl.textContent=Math.max(0,timeLeft);
+    if(timeLeft<=0)clearInterval(uiTimer);
+  },1000);
+  G.uiTimer=uiTimer;
 }
 
 function mtof(m){return 440*Math.pow(2,(m-69)/12);}
 
 function playMusic(){
-  stopMusic();
-  try{G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return;}
+  if(G.beatTimer){clearTimeout(G.beatTimer);G.beatTimer=null;}
+  try{
+    if(!G.audioCtx||G.audioCtx.state==='closed'){
+      G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    }
+    if(G.audioCtx.state==='suspended'){G.audioCtx.resume();}
+  }catch(e){console.warn('AudioContext error',e);return;}
+
+  // 15秒後に強制投票画面へ
+  G.forceVoteTimer=setTimeout(async()=>{
+    stopMusic();
+    const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
+    const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+    const hdrs={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=minimal'};
+    // 全員のis_doneをtrueにして投票へ
+    await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({status:'voting'})});
+  },15000);
   const ctx=G.audioCtx,m=G.myMusic,steps=m.steps||16;
   const spb=60/m.bpm,sb2=spb/4;
   G.stepIdx=0;
@@ -767,6 +844,8 @@ function playMusic(){
 
 function stopMusic(){
   if(G.beatTimer){clearTimeout(G.beatTimer);G.beatTimer=null;}
+  if(G.forceVoteTimer){clearTimeout(G.forceVoteTimer);G.forceVoteTimer=null;}
+  if(G.uiTimer){clearInterval(G.uiTimer);G.uiTimer=null;}
   if(G.audioCtx){try{G.audioCtx.close();}catch(e){}G.audioCtx=null;}
 }
 
@@ -775,8 +854,33 @@ async function doDone(){
   stopMusic();
   document.getElementById('p-done').disabled=true;
   document.getElementById('p-done').textContent=L('pWait');
-  await sb.from('room_members').update({is_done:true}).eq('id',G.myMemberId);
-  if(G.isHost)setTimeout(async()=>{await sb.from('rooms').update({status:'voting'}).eq('id',G.roomDbId);},2500);
+
+  // REST APIでis_done更新
+  const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
+  const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+  const headers={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=minimal'};
+  try{
+    await fetch(base+'/room_members?id=eq.'+G.myMemberId,{method:'PATCH',headers,body:JSON.stringify({is_done:true})});
+  }catch(e){console.warn('doDone error',e);}
+
+  // 全員が押したかをポーリングでチェック（誰でも遷移できる）
+  let doneCheckCount=0;
+  const doneCheck=setInterval(async()=>{
+    doneCheckCount++;
+    if(doneCheckCount>30){clearInterval(doneCheck);return;} // 60秒でタイムアウト
+    try{
+      const r=await fetch(base+'/room_members?select=is_done&room_id=eq.'+G.roomDbId,{headers});
+      const members=await r.json();
+      if(Array.isArray(members)&&members.length>0){
+        const allDone=members.every(m=>m.is_done);
+        if(allDone){
+          clearInterval(doneCheck);
+          // 最初に気づいた人がvotingに遷移させる
+          await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers,body:JSON.stringify({status:'voting'})});
+        }
+      }
+    }catch(e){}
+  },2000);
 }
 
 /* ============ VOTING ============ */
@@ -795,9 +899,31 @@ async function doVote(){
   if(!G.myVote)return;
   document.getElementById('v-btn').disabled=true;
   document.getElementById('v-btn').innerHTML=`<span class="spin-icon"></span>${L('vVoting')}`;
-  await sb.from('room_members').update({vote_target_user_id:G.myVote}).eq('id',G.myMemberId);
+  const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
+  const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+  const headers={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=minimal'};
+  try{
+    await fetch(base+'/room_members?id=eq.'+G.myMemberId,{method:'PATCH',headers,body:JSON.stringify({vote_target_user_id:G.myVote})});
+  }catch(e){console.warn('vote error',e);}
   document.getElementById('v-btn').textContent=L('vVoted');
-  if(G.isHost)setTimeout(async()=>{await sb.from('rooms').update({status:'result'}).eq('id',G.roomDbId);},3000);
+
+  // 全員投票済みかチェック
+  let voteCheckCount=0;
+  const voteCheck=setInterval(async()=>{
+    voteCheckCount++;
+    if(voteCheckCount>30){clearInterval(voteCheck);return;}
+    try{
+      const r=await fetch(base+'/room_members?select=vote_target_user_id&room_id=eq.'+G.roomDbId,{headers});
+      const members=await r.json();
+      if(Array.isArray(members)&&members.length>0){
+        const allVoted=members.every(m=>m.vote_target_user_id);
+        if(allVoted){
+          clearInterval(voteCheck);
+          await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers,body:JSON.stringify({status:'result'})});
+        }
+      }
+    }catch(e){}
+  },2000);
 }
 
 /* ============ RESULT ============ */
@@ -829,7 +955,7 @@ function goHome(){
   stopMusic();
   stopPolling();
   if(G.channel){sb.removeChannel(G.channel);}
-  G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0};
+  G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0,playAt:0,forceVoteTimer:null,uiTimer:null};
   document.getElementById('h-name').value='';const jn=document.getElementById('h-join-name');if(jn)jn.value='';
   document.getElementById('h-code').value='';
   show('s-home');
