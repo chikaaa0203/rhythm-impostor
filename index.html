@@ -1239,6 +1239,7 @@ function stopMusic(){
   if(G.htmlAudio){G.htmlAudio.pause();G.htmlAudio=null;}
   if(G_musicWaitTimer){clearInterval(G_musicWaitTimer);G_musicWaitTimer=null;}
   if(G_votingPoller){clearInterval(G_votingPoller);G_votingPoller=null;}
+  if(typeof G_resultPoller!=="undefined"&&G_resultPoller){clearInterval(G_resultPoller);G_resultPoller=null;}
   const btnWrap=document.getElementById('p-vote-btn-wrap');
   if(btnWrap)btnWrap.style.display='none';
 }
@@ -1282,6 +1283,26 @@ async function showVoting(){
   await fetchMembers();
   document.getElementById('v-grid').innerHTML=G.members.map(m=>`<div class="vote-card ${m.userId===G.myUserId?'me':''}" id="vc-${m.userId}" onclick="${m.userId!==G.myUserId?`pickVote('${m.userId}')`:''}" ><div class="vote-av">${m.emoji}</div><div class="vote-nm">${m.name}</div><div class="vote-tag">${m.userId===G.myUserId?L('youSuffix'):''}</div></div>`).join('');
   show('s-voting');
+  // 結果画面への遷移を監視
+  startResultPoller();
+}
+
+let G_resultPoller=null;
+function startResultPoller(){
+  if(G_resultPoller)clearInterval(G_resultPoller);
+  G_resultPoller=setInterval(async()=>{
+    try{
+      const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
+      const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+      const headers={'apikey':key,'Authorization':'Bearer '+key};
+      const r=await fetch(base+'/rooms?select=status&id=eq.'+G.roomDbId,{headers});
+      const data=await r.json();
+      if(data[0]?.status==='result'){
+        clearInterval(G_resultPoller);G_resultPoller=null;
+        await showResult();
+      }
+    }catch(e){}
+  },1500);
 }
 function pickVote(uid){
   G.myVote=uid;
@@ -1301,7 +1322,7 @@ async function doVote(){
   }catch(e){console.warn('vote error',e);}
   document.getElementById('v-btn').textContent=L('vVoted');
 
-  // 全員投票済みかチェック
+  // 全員投票済みかチェック → 自分も即結果画面へ
   let voteCheckCount=0;
   const voteCheck=setInterval(async()=>{
     voteCheckCount++;
@@ -1314,6 +1335,8 @@ async function doVote(){
         if(allVoted){
           clearInterval(voteCheck);
           await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers,body:JSON.stringify({status:'result'})});
+          // 自分も即座に結果画面へ
+          await showResult();
         }
       }
     }catch(e){}
