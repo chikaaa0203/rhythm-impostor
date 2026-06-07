@@ -290,13 +290,31 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:
         <div class="glass-card" style="text-align:center;padding:16px;">
           <div style="font-size:32px;margin-bottom:8px;">🎲</div>
           <div style="font-size:13px;font-weight:700;color:var(--text);" id="l-random-label">曲セットはスタート時にランダム選択！</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px;" id="l-random-sub">10種類のジャンルからランダムで出題されます</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;" id="l-random-sub">アップロードした曲からランダムで出題されます</div>
+        </div>
+        <!-- iOSのみ表示 -->
+        <div id="lobby-ios-banner-host" style="display:none;margin-bottom:10px;">
+          <button onclick="initIOSAudio()" id="lobby-ios-btn-host"
+            style="width:100%;padding:14px;border-radius:12px;background:rgba(255,45,120,0.15);color:var(--pink);border:1.5px solid rgba(255,45,120,0.4);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+            🔊 iPhoneの方：ここをタップして音声を有効化
+          </button>
+          <div id="lobby-ios-ok-host" style="display:none;text-align:center;font-size:12px;color:var(--mint);margin-top:6px;">✅ 音声が有効になりました！</div>
         </div>
         <button class="btn btn-primary" id="l-start" onclick="doStart()" disabled>🎵 ゲームスタート！</button>
       </div>
 
-      <div id="l-guest-area" style="display:none;text-align:center;padding:24px;color:var(--text3);font-size:14px;font-weight:500;" class="pulsing" id="l-wait-msg">
-        ホストがゲームを開始するまで待ってね 🎵
+      <div id="l-guest-area" style="display:none;">
+        <div style="text-align:center;padding:20px;color:var(--text3);font-size:14px;font-weight:500;" class="pulsing">
+          ホストがゲームを開始するまで待ってね 🎵
+        </div>
+        <!-- iOSのみ表示 -->
+        <div id="lobby-ios-banner" style="display:none;padding:0 0 16px;">
+          <button onclick="initIOSAudio()" id="lobby-ios-btn"
+            style="width:100%;padding:14px;border-radius:12px;background:rgba(255,45,120,0.15);color:var(--pink);border:1.5px solid rgba(255,45,120,0.4);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+            🔊 iPhoneの方：ここをタップして音声を有効化
+          </button>
+          <div id="lobby-ios-ok" style="display:none;text-align:center;font-size:12px;color:var(--mint);margin-top:6px;">✅ 音声が有効になりました！</div>
+        </div>
       </div>
 
       <div class="spacer"></div>
@@ -450,10 +468,15 @@ function initIOSAudio(){
     ctx.resume().then(()=>{
       window._iosAudioCtx=ctx;
       window._iosUnlocked=true;
-      const banner=document.getElementById('ios-audio-banner');
-      if(banner)banner.style.display='none';
-      const ok=document.getElementById('ios-audio-ok');
-      if(ok){ok.style.display='block';setTimeout(()=>ok.style.display='none',2000);}
+      // 全ての有効化ボタンを非表示にしてOKを表示
+      ['ios-audio-banner','lobby-ios-banner','lobby-ios-banner-host'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el)el.style.display='none';
+      });
+      ['ios-audio-ok','lobby-ios-ok','lobby-ios-ok-host'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el){el.style.display='block';setTimeout(()=>el.style.display='none',2000);}
+      });
     });
   }catch(e){console.warn('iOS audio init failed',e);}
 }
@@ -634,6 +657,12 @@ async function openLobby(){
   renderTrackOpts();
   document.getElementById('l-host-area').style.display=G.isHost?'block':'none';
   document.getElementById('l-guest-area').style.display=G.isHost?'none':'block';
+  // iOS検出→ロビーでもボタン表示
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  if(isIOS&&!window._iosUnlocked){
+    const banner=document.getElementById(G.isHost?'lobby-ios-banner-host':'lobby-ios-banner');
+    if(banner)banner.style.display='block';
+  }
   subscribeRoom();
   show('s-lobby');
 }
@@ -724,8 +753,9 @@ async function poll(){
           }
           await applyMyTrack();
           stopPolling();
-          // startPlayingへ（play_atはwaitForHostPlayで待つ）
           startPlaying();
+          // 投票遷移検知のために軽量ポーリングを再開
+          startVotingPoller();
           return;
         }
         if(room.status==='voting'&&prev!=='result'){
@@ -746,6 +776,31 @@ async function poll(){
 
 function subscribeRoom(){
   startPolling();
+}
+
+// 再生中に voting/result を検知する軽量ポーラー
+let G_votingPoller=null;
+function startVotingPoller(){
+  if(G_votingPoller)clearInterval(G_votingPoller);
+  G_votingPoller=setInterval(async()=>{
+    try{
+      const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
+      const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+      const headers={'apikey':key,'Authorization':'Bearer '+key};
+      const r=await fetch(base+'/rooms?select=status&id=eq.'+G.roomDbId,{headers});
+      const data=await r.json();
+      const status=data[0]?.status;
+      if(status==='voting'){
+        clearInterval(G_votingPoller);G_votingPoller=null;
+        stopMusic();
+        await showVoting();
+      } else if(status==='result'){
+        clearInterval(G_votingPoller);G_votingPoller=null;
+        stopMusic();
+        await showResult();
+      }
+    }catch(e){}
+  },2000);
 }
 
 /* ============ START ============ */
@@ -918,15 +973,15 @@ function startCountdown(playAtISO){
       if(!started){
         started=true;
         numEl.textContent='🎵';
-        msgEl.textContent=L('cdPlay');
+        msgEl.textContent='START!';
         setTimeout(startPlaying,100);
       }
       return;
     }
     const secs=Math.ceil(remaining/1000);
-    if(secs>=3){numEl.textContent='3';msgEl.textContent=L('cdReady');}
-    else if(secs===2){numEl.textContent='2';msgEl.textContent=L('cdAlmost');}
-    else{numEl.textContent='1';msgEl.textContent=L('cdGo');}
+    if(secs>=3){numEl.textContent='3';msgEl.textContent='';}
+    else if(secs===2){numEl.textContent='2';msgEl.textContent='';}
+    else{numEl.textContent='1';msgEl.textContent='';}
     setTimeout(updateCountdown,100);
   }
   updateCountdown();
@@ -938,18 +993,18 @@ async function forceGoVoting(){
   const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
   const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
   const hdrs={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({status:'voting'})});
+  // DBをvotingに更新
+  fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({status:'voting'})});
+  // 自分自身も即座に投票画面へ（ポーリングに頼らない）
+  await showVoting();
 }
 
-// 誰でも押せる投票画面移動ボタン
 async function goToVoting(){
   stopMusic();
   const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
   const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
   const hdrs={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=minimal'};
-  // statusをvotingに変更（全員のポーリングが検知して自動遷移）
-  await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({status:'voting'})});
-  // 自分は即座に移動
+  fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({status:'voting'})});
   await showVoting();
 }
 
@@ -1053,7 +1108,7 @@ function startMusicCountdown(playAtISO){
 
   const numEl=document.getElementById('p-cd-num');
   const msgEl=document.getElementById('p-cd-msg');
-  const labels={3:'準備して！',2:'もうすぐ…',1:'いくよ！'};
+  const labels={3:'3',2:'2',1:'1'};
   let musicStarted=false;
 
   const cdTimer=setInterval(()=>{
@@ -1183,6 +1238,7 @@ function stopMusic(){
   if(G.audioCtx){try{G.audioCtx.close();}catch(e){}G.audioCtx=null;}
   if(G.htmlAudio){G.htmlAudio.pause();G.htmlAudio=null;}
   if(G_musicWaitTimer){clearInterval(G_musicWaitTimer);G_musicWaitTimer=null;}
+  if(G_votingPoller){clearInterval(G_votingPoller);G_votingPoller=null;}
   const btnWrap=document.getElementById('p-vote-btn-wrap');
   if(btnWrap)btnWrap.style.display='none';
 }
