@@ -358,9 +358,17 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:
         みんな違う曲を聴いているかも？自分の音楽が<strong>みんなと違う</strong>と感じたら、あなたがインポスターかも！周りをよく観察して…
       </div>
       <div style="text-align:center;margin-top:10px;">
-        <span style="font-size:13px;color:var(--text3);">残り時間</span>
+        <span style="font-size:13px;color:var(--text3);" id="p-timer-label">残り時間</span>
         <div id="p-timer" style="font-size:36px;font-weight:900;color:var(--purple2);font-family:monospace;line-height:1.2;">30</div>
       </div>
+      <!-- カウント0になったら表示される投票ボタン -->
+      <div id="p-vote-btn-wrap" style="display:none;margin-top:16px;">
+        <button onclick="goToVoting()"
+          style="width:100%;padding:18px;border-radius:14px;background:linear-gradient(135deg,var(--pink),#be185d);color:#fff;border:none;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:1px;box-shadow:0 4px 24px rgba(255,45,120,0.4);animation:pulse2 1s ease-in-out infinite;">
+          🗳️ 投票する！
+        </button>
+      </div>
+      <style>@keyframes pulse2{0%,100%{box-shadow:0 4px 24px rgba(255,45,120,0.4);}50%{box-shadow:0 4px 40px rgba(255,45,120,0.8);}}</style>
       <div class="spacer"></div>
     </div>
 
@@ -781,36 +789,54 @@ async function doStart(){
     let normalTrackUrl='',imposterTrackUrl='';
     let selectedCategory='';
 
-    if(useDB){
-      // DBから曲を選曲
-      const cats=['slow','mid','fast','hyper'];
-      selectedCategory=cats[Math.floor(Math.random()*cats.length)];
-
-      // 通常曲（同カテゴリ）
-      const nRes=await fetch(base+'/tracks?category=eq.'+selectedCategory+'&order=created_at.desc',{headers:hdrsGet});
-      const nTracks=await nRes.json();
-      // インポスター曲（別カテゴリ）
-      const iRes=await fetch(base+'/tracks?category=neq.'+selectedCategory+'&order=created_at.desc',{headers:hdrsGet});
-      const iTracks=await iRes.json();
-
-      if(!nTracks||nTracks.length===0||!iTracks||iTracks.length===0){
-        // DBに十分な曲がない場合はWeb Audio APIにフォールバック
-        return doStartWebAudio(hdrs,base);
-      }
-      const nTrack=nTracks[Math.floor(Math.random()*nTracks.length)];
-      const iTrack=iTracks[Math.floor(Math.random()*iTracks.length)];
-      normalTrackId=nTrack.id; normalTrackName=nTrack.name; normalTrackUrl=nTrack.file_url;
-      imposterTrackId=iTrack.id; imposterTrackName=iTrack.name; imposterTrackUrl=iTrack.file_url;
-
-      G.useDBTracks=true;
-      G.normalTrackUrl=normalTrackUrl;
-      G.imposterTrackUrl=imposterTrackUrl;
-      G.normalTrackName=normalTrackName;
-      G.imposterTrackName=imposterTrackName;
-    } else {
-      // Web Audio API fallback
-      return doStartWebAudio(hdrs,base);
+    if(!useDB){
+      alert('曲が登録されていません。管理画面からMP3をアップロードしてください。');
+      setBtn('l-start',true,L('lStart'));
+      return;
     }
+
+    // DBから曲を選曲
+    const cats=['slow','mid','fast','hyper'];
+    // 全カテゴリの曲数を確認して存在するカテゴリだけ使う
+    const allRes=await fetch(base+'/tracks?select=id,category',{headers:hdrsGet});
+    const allTracks=await allRes.json();
+    const availableCats=[...new Set(allTracks.map(t=>t.category))];
+
+    if(availableCats.length<2){
+      alert('最低2種類のカテゴリ（テンポ帯）の曲が必要です。\n管理画面からさらに曲をアップロードしてください。');
+      setBtn('l-start',true,L('lStart'));
+      return;
+    }
+
+    // 通常カテゴリをランダムに選ぶ
+    selectedCategory=availableCats[Math.floor(Math.random()*availableCats.length)];
+    // インポスターカテゴリは別のカテゴリからランダムに
+    const impCats=availableCats.filter(c=>c!==selectedCategory);
+    const imposterCategory=impCats[Math.floor(Math.random()*impCats.length)];
+
+    // 通常曲
+    const nRes=await fetch(base+'/tracks?category=eq.'+selectedCategory+'&order=created_at.desc',{headers:hdrsGet});
+    const nTracks=await nRes.json();
+    // インポスター曲
+    const iRes=await fetch(base+'/tracks?category=eq.'+imposterCategory+'&order=created_at.desc',{headers:hdrsGet});
+    const iTracks=await iRes.json();
+
+    if(!nTracks||nTracks.length===0||!iTracks||iTracks.length===0){
+      alert('曲が不足しています。管理画面からMP3をアップロードしてください。');
+      setBtn('l-start',true,L('lStart'));
+      return;
+    }
+
+    const nTrack=nTracks[Math.floor(Math.random()*nTracks.length)];
+    const iTrack=iTracks[Math.floor(Math.random()*iTracks.length)];
+    normalTrackId=nTrack.id; normalTrackName=nTrack.name; normalTrackUrl=nTrack.file_url;
+    imposterTrackId=iTrack.id; imposterTrackName=iTrack.name; imposterTrackUrl=iTrack.file_url;
+
+    G.useDBTracks=true;
+    G.normalTrackUrl=normalTrackUrl;
+    G.imposterTrackUrl=imposterTrackUrl;
+    G.normalTrackName=normalTrackName;
+    G.imposterTrackName=imposterTrackName;
 
     const impIdx=Math.floor(Math.random()*G.members.length);
     for(let i=0;i<G.members.length;i++){
@@ -821,48 +847,24 @@ async function doStart(){
         is_done:false,vote_target_user_id:null
       })});
     }
-    const playAt=new Date(Date.now()+3500).toISOString();
+    // play_atをnullにリセットしてからstatus=playingにする（ゲストが古いplay_atを拾わないように）
     await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({
       status:'playing',
       selected_category:selectedCategory,
       normal_track_id:normalTrackId,
       imposter_track_id:imposterTrackId,
-      play_at:playAt
+      play_at:null
     })});
   }catch(e){alert(L('errPfx')+e.message);setBtn('l-start',true,L('lStart'));}
 }
 
-async function doStartWebAudio(hdrs,base){
-  // Web Audio APIフォールバック
-  const randomTrack=TRACKS[Math.floor(Math.random()*TRACKS.length)];
-  G.selTrack=randomTrack;
-  G.useDBTracks=false;
-  const impIdx=Math.floor(Math.random()*G.members.length);
-  for(let i=0;i<G.members.length;i++){
-    const isImp=i===impIdx;
-    await fetch(base+'/room_members?id=eq.'+G.members[i].memberId,{method:'PATCH',headers:hdrs,body:JSON.stringify({
-      is_imposter:isImp,
-      assigned_track_id:isImp?randomTrack.id+'_imposter':randomTrack.id+'_normal',
-      is_done:false,vote_target_user_id:null
-    })});
-  }
-  const playAt=new Date(Date.now()+3500).toISOString();
-  await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({
-    status:'playing',
-    track_set_id:randomTrack.id,
-    play_at:playAt
-  })});
-}
+
 
 function applyMyTrack(){
   const me=G.members.find(m=>m.userId===G.myUserId);
   G.isImposter=me?.isImposter||false;
-  // DBトラックかWeb Audioかを判定
-  if(G.useDBTracks){
-    G.myMusic=null; // DBトラックはstartPlayingで処理
-  } else {
-    G.myMusic=G.isImposter?G.selTrack.imposter:G.selTrack.normal;
-  }
+  G.myMusic=null; // DB曲はstartPlayingで処理
+  G.useDBTracks=true;
 }
 
 /* ============ COUNTDOWN ============ */
@@ -936,6 +938,18 @@ async function forceGoVoting(){
   await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({status:'voting'})});
 }
 
+// 誰でも押せる投票画面移動ボタン
+async function goToVoting(){
+  stopMusic();
+  const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
+  const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+  const hdrs={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=minimal'};
+  // statusをvotingに変更（全員のポーリングが検知して自動遷移）
+  await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers:hdrs,body:JSON.stringify({status:'voting'})});
+  // 自分は即座に移動
+  await showVoting();
+}
+
 function showOverlayState(state){
   ['p-state-host','p-state-guest','p-state-cd'].forEach(id=>{
     const el=document.getElementById(id);
@@ -991,21 +1005,30 @@ function tapToPlay(){
 let G_musicWaitTimer=null;
 function waitForHostPlay(){
   if(G_musicWaitTimer)clearInterval(G_musicWaitTimer);
+  // ゲスト：ホストがtapToPlayを押してplay_atがセットされるのを待つ
+  // play_atはホストがボタンを押した時だけセットされる（doStartではnull）
   G_musicWaitTimer=setInterval(async()=>{
     try{
       const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
       const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
       const headers={'apikey':key,'Authorization':'Bearer '+key};
-      const r=await fetch(base+'/rooms?select=play_at&id=eq.'+G.roomDbId,{headers});
+      const r=await fetch(base+'/rooms?select=play_at,status&id=eq.'+G.roomDbId,{headers});
       const data=await r.json();
-      const playAt=data[0]?.play_at;
-      if(playAt&&new Date(playAt).getTime()>Date.now()-5000){
-        clearInterval(G_musicWaitTimer);
-        G_musicWaitTimer=null;
-        startMusicCountdown(playAt);
+      const room=data[0];
+      if(!room||room.status!=='playing')return; // まだplayingでなければスキップ
+      const playAt=room.play_at;
+      // play_atがnullでなく、かつ現在時刻より未来（または3秒以内の過去）のみ有効
+      if(playAt){
+        const t=new Date(playAt).getTime();
+        const now=Date.now();
+        if(t>now-500){ // 0.5秒以内の誤差まで許容（ほぼ未来）
+          clearInterval(G_musicWaitTimer);
+          G_musicWaitTimer=null;
+          startMusicCountdown(playAt);
+        }
       }
     }catch(e){}
-  },500);
+  },300);
 }
 
 function unlockIOSAudio(){
@@ -1025,10 +1048,9 @@ function startMusicCountdown(playAtISO){
   const playAt=new Date(playAtISO).getTime();
   showOverlayState('cd');
 
-  // iOS
-  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  // iOS：ホーム画面で有効化済みの場合はボタン不要
   const iosBtn=document.getElementById('p-ios-tap');
-  if(iosBtn)iosBtn.style.display=isIOS?'block':'none';
+  if(iosBtn)iosBtn.style.display='none'; // カウントダウン中はボタン不要（ホーム画面で対応済み）
 
   // AudioContext事前起動
   try{
@@ -1086,10 +1108,18 @@ function startMusicCountdown(playAtISO){
         timeLeft--;
         const t=Math.max(0,timeLeft);
         if(timerEl)timerEl.textContent=t;
-        if(preEl)preEl.textContent=t+'秒後に自動で投票へ';
+        if(timerEl)timerEl.style.color=t<=5?'var(--pink)':'var(--purple2)';
+        if(preEl)preEl.textContent=t>0?t+'秒後に投票へ':'';
         if(timeLeft<=0){
           clearInterval(G.uiTimer);
           G.uiTimer=null;
+          // ボタンを表示
+          const btnWrap=document.getElementById('p-vote-btn-wrap');
+          if(btnWrap)btnWrap.style.display='block';
+          const label=document.getElementById('p-timer-label');
+          if(label)label.textContent='';
+          if(timerEl)timerEl.textContent='';
+          // 自動遷移も試みる（バックグラウンドで）
           forceGoVoting();
         }
       },1000);
@@ -1188,6 +1218,8 @@ function stopMusic(){
   if(G.audioCtx){try{G.audioCtx.close();}catch(e){}G.audioCtx=null;}
   if(G.htmlAudio){G.htmlAudio.pause();G.htmlAudio=null;}
   if(G_musicWaitTimer){clearInterval(G_musicWaitTimer);G_musicWaitTimer=null;}
+  const btnWrap=document.getElementById('p-vote-btn-wrap');
+  if(btnWrap)btnWrap.style.display='none';
 }
 
 /* ============ DONE ============ */
