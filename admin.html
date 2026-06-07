@@ -125,7 +125,31 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 </head>
 <body>
 
-<div class="app">
+<!-- パスワード画面 -->
+<div id="auth-screen" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:360px;padding:24px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-size:48px;margin-bottom:12px;">🔐</div>
+      <div style="font-size:20px;font-weight:900;background:linear-gradient(135deg,#fff,var(--purple2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">管理画面</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:6px;">Music Imposter Admin</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">パスワード</div>
+      <input id="auth-pw" type="password" placeholder="パスワードを入力..."
+        style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:13px 16px;color:var(--text);font-size:15px;font-family:inherit;outline:none;margin-bottom:12px;"
+        onkeydown="if(event.key==='Enter')checkAuth()"/>
+      <button onclick="checkAuth()"
+        style="width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,var(--purple),#4c1d95);color:#fff;border:none;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:1px;">
+        ログイン
+      </button>
+      <div id="auth-err" style="color:var(--pink);font-size:13px;margin-top:10px;text-align:center;display:none;">
+        ❌ パスワードが違います
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="main-app" style="display:none;">
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-logo">
@@ -282,7 +306,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
   </div>
-</div>
+</div><!-- /main-app -->
 
 <!-- EDIT MODAL -->
 <div class="modal-bg" id="edit-modal">
@@ -319,6 +343,30 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+/* ===== 認証 ===== */
+// ▼ここのパスワードを変更してください
+const ADMIN_PASSWORD = 'musicimposter2025';
+
+function checkAuth(){
+  const pw = document.getElementById('auth-pw').value;
+  if(pw === ADMIN_PASSWORD){
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('main-app').style.display='grid';
+    sessionStorage.setItem('admin_auth','1');
+    loadDashboard();
+  } else {
+    document.getElementById('auth-err').style.display='block';
+    document.getElementById('auth-pw').value='';
+    setTimeout(()=>document.getElementById('auth-err').style.display='none',2000);
+  }
+}
+
+// セッション中は再ログイン不要
+if(sessionStorage.getItem('admin_auth')==='1'){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('main-app').style.display='grid';
+}
+
 const SUPA_URL='https://orhtqozyagxipngaklsy.supabase.co';
 const SUPA_KEY='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
@@ -597,8 +645,6 @@ async function doDelete(id,name){
   loadTracks();
 }
 
-// 初期化
-loadDashboard();
 </script>
 </body>
 </html>
