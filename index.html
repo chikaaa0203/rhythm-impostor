@@ -1101,10 +1101,9 @@ function unlockIOSAudio(){
 function startMusicCountdown(playAtISO){
   const playAt=new Date(playAtISO).getTime();
   showOverlayState('cd');
-  // iOS検出：カウントダウン中もタップボタンを表示（音声解除のため）
-  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  // カウントダウン中はiOSボタン不要（ロビーで対応済み）
   const iosBtn=document.getElementById('p-ios-tap');
-  if(iosBtn)iosBtn.style.display=isIOS?'block':'none';
+  if(iosBtn)iosBtn.style.display='none';
 
   const numEl=document.getElementById('p-cd-num');
   const msgEl=document.getElementById('p-cd-msg');
@@ -1301,8 +1300,8 @@ function startResultPoller(){
         clearInterval(G_resultPoller);G_resultPoller=null;
         await showResult();
       }
-    }catch(e){}
-  },1500);
+    }catch(e){console.warn('resultPoller error',e);}
+  },1000);
 }
 function pickVote(uid){
   G.myVote=uid;
@@ -1334,8 +1333,8 @@ async function doVote(){
         const allVoted=members.every(m=>m.vote_target_user_id);
         if(allVoted){
           clearInterval(voteCheck);
-          await fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers,body:JSON.stringify({status:'result'})});
-          // 自分も即座に結果画面へ
+          // DB更新と自分の画面遷移を同時に
+          fetch(base+'/rooms?id=eq.'+G.roomDbId,{method:'PATCH',headers,body:JSON.stringify({status:'result'})});
           await showResult();
         }
       }
@@ -1344,7 +1343,11 @@ async function doVote(){
 }
 
 /* ============ RESULT ============ */
+let G_resultShown=false;
 async function showResult(){
+  if(G_resultShown)return;
+  G_resultShown=true;
+  if(G_resultPoller){clearInterval(G_resultPoller);G_resultPoller=null;}
   await fetchMembers();
   const votes={};
   G.members.forEach(m=>{if(m.voteTarget)votes[m.voteTarget]=(votes[m.voteTarget]||0)+1;});
@@ -1373,6 +1376,7 @@ function goHome(){
   stopPolling();
   if(G.channel){sb.removeChannel(G.channel);}
   G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],isImposter:false,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0,playAt:0,forceVoteTimer:null,uiTimer:null,playStartTime:0,useDBTracks:true,normalTrackUrl:'',imposterTrackUrl:'',normalTrackName:'',imposterTrackName:'',htmlAudio:null};
+  G_resultShown=false;
   document.getElementById('h-name').value='';const jn=document.getElementById('h-join-name');if(jn)jn.value='';
   document.getElementById('h-code').value='';
   show('s-home');
