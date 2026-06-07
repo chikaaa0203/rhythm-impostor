@@ -430,13 +430,15 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 /* ============ iOS AUDIO INIT ============ */
-(function(){
+window._iosUnlocked=false;
+
+document.addEventListener('DOMContentLoaded',function(){
   const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
   if(isIOS){
     const banner=document.getElementById('ios-audio-banner');
     if(banner)banner.style.display='block';
   }
-})();
+});
 
 function initIOSAudio(){
   try{
@@ -445,11 +447,12 @@ function initIOSAudio(){
     const src=ctx.createBufferSource();
     src.buffer=buf;src.connect(ctx.destination);src.start(0);
     ctx.resume().then(()=>{
-      // グローバルに保持
       window._iosAudioCtx=ctx;
-      document.getElementById('ios-audio-banner').style.display='none';
-      document.getElementById('ios-audio-ok').style.display='block';
-      setTimeout(()=>document.getElementById('ios-audio-ok').style.display='none',2000);
+      window._iosUnlocked=true;
+      const banner=document.getElementById('ios-audio-banner');
+      if(banner)banner.style.display='none';
+      const ok=document.getElementById('ios-audio-ok');
+      if(ok){ok.style.display='block';setTimeout(()=>ok.style.display='none',2000);}
     });
   }catch(e){console.warn('iOS audio init failed',e);}
 }
@@ -544,45 +547,11 @@ function applyLang(){
 
 /* ============ STATE ============ */
 
-/* ============ TRACK SETS ============ */
-const TRACKS=[
-  {id:'jazz_techno',name:'🎷 Jazz vs Techno',nl:'ゆったりスウィングジャズ',il:'爆速テクノ',nlEn:'Slow Swing Jazz',ilEn:'Fast Techno',
-    normal:{icon:'🎷',name:'Swing Jazz',bpm:85,swing:0.67,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[1,0,1,1,1,0,1,0,1,0,1,1,1,0,1,0],bassNote:[55,0,0,0,55,0,62,0,55,0,0,0,58,0,0,0],melody:[69,0,0,72,0,74,0,72,69,0,0,67,0,65,0,67]},
-    imposter:{icon:'⚡',name:'Techno',bpm:155,swing:0.5,kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],bassNote:[36,0,36,0,36,36,0,0,36,0,36,0,36,36,0,0],melody:[84,0,84,87,0,84,0,0,84,0,84,87,84,0,0,0]}},
-  {id:'waltz_hardrock',name:'🎻 ワルツ vs ハードロック',nl:'優雅なワルツ（3拍子）',il:'ハードロック（激速）',nlEn:'Elegant Waltz (3/4)',ilEn:'Hard Rock (fast)',
-    normal:{icon:'🎻',name:'Waltz',bpm:80,swing:0.5,steps:12,kick:[1,0,0,0,0,0,1,0,0,0,0,0],snare:[0,0,0,1,0,0,0,0,0,1,0,0],hihat:[1,0,1,1,0,1,1,0,1,1,0,1],bassNote:[48,0,0,55,0,0,48,0,0,53,0,0],melody:[72,0,74,76,0,0,72,0,69,67,0,0]},
-    imposter:{icon:'🎸',name:'Hard Rock',bpm:150,swing:0.5,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],bassNote:[33,33,0,33,0,0,33,0,33,33,0,33,0,0,33,0],melody:[57,0,57,60,0,0,60,0,57,0,57,60,58,0,0,0]}},
-  {id:'bossa_dnb',name:'🌴 ボサノバ vs D&B',nl:'ゆったりボサノバ',il:'爆速ドラムンベース',nlEn:'Relaxed Bossa Nova',ilEn:'Drum & Bass',
-    normal:{icon:'🌴',name:'Bossa Nova',bpm:75,swing:0.5,kick:[1,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0],snare:[0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1],hihat:[1,0,1,0,1,1,0,1,1,0,1,0,1,0,0,1],bassNote:[45,0,0,52,0,0,50,0,45,0,0,52,0,0,47,0],melody:[69,0,72,0,74,72,0,0,69,0,67,0,65,67,0,0]},
-    imposter:{icon:'🥁',name:'Drum & Bass',bpm:160,swing:0.5,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],bassNote:[36,0,36,36,0,36,0,0,36,0,36,36,0,36,0,0],melody:[72,0,72,0,75,0,72,0,72,0,75,75,0,72,0,0]}},
-  {id:'hiphop_samba',name:'🎤 Hip Hop vs サンバ',nl:'重いHip Hop',il:'激しいサンバ',nlEn:'Heavy Hip Hop',ilEn:'Fast Samba',
-    normal:{icon:'🎤',name:'Hip Hop',bpm:82,swing:0.62,kick:[1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],hihat:[1,1,0,1,1,1,0,1,1,1,0,1,1,0,0,1],bassNote:[36,0,0,36,0,0,41,0,36,0,0,36,0,43,0,0],melody:[60,0,60,0,63,0,0,60,58,0,0,58,60,0,0,0]},
-    imposter:{icon:'🇧🇷',name:'Samba',bpm:145,swing:0.5,kick:[1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0],snare:[0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],bassNote:[48,0,52,0,55,0,52,0,48,0,52,0,55,52,0,0],melody:[67,0,69,0,71,0,72,0,71,0,69,0,67,0,65,0]}},
-  {id:'irish_flamenco',name:'☘️ アイルランド vs フラメンコ',nl:'アイルランド民謡（6/8）',il:'フラメンコ（激速）',nlEn:'Irish Folk (6/8)',ilEn:'Flamenco (fast)',
-    normal:{icon:'☘️',name:'Irish Jig',bpm:88,swing:0.5,steps:12,kick:[1,0,0,1,0,0,1,0,0,1,0,0],snare:[0,0,1,0,0,1,0,0,1,0,0,1],hihat:[1,1,0,1,1,0,1,1,0,1,1,0],bassNote:[52,0,0,55,0,0,52,0,0,48,0,0],melody:[76,74,72,74,76,79,76,74,72,71,72,74]},
-    imposter:{icon:'💃',name:'Flamenco',bpm:152,swing:0.5,steps:12,kick:[1,0,0,0,1,0,0,1,0,0,1,0],snare:[0,0,1,0,0,0,1,0,0,1,0,0],hihat:[1,0,1,0,1,1,0,1,1,0,1,0],bassNote:[40,0,0,43,0,0,45,0,0,43,0,0],melody:[64,65,0,67,0,65,64,0,62,0,60,62]}},
-  {id:'reggae_techno',name:'🏝️ レゲエ vs テクノ',nl:'超ゆったりレゲエ',il:'爆速テクノ',nlEn:'Very slow Reggae',ilEn:'Fast Techno',
-    normal:{icon:'🏝️',name:'Reggae',bpm:70,swing:0.5,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],bassNote:[43,0,0,0,43,0,0,43,41,0,0,0,41,0,0,0],melody:[0,0,67,0,0,67,0,0,0,65,0,0,65,0,0,0]},
-    imposter:{icon:'⚙️',name:'Techno',bpm:148,swing:0.5,kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],bassNote:[36,0,36,0,36,36,0,0,36,0,36,0,36,36,0,0],melody:[72,0,72,72,0,72,75,0,72,0,72,72,75,0,0,0]}},
-  {id:'okinawa_march',name:'🌺 沖縄民謡 vs マーチ',nl:'ゆったり沖縄民謡',il:'キビキビ行進曲',nlEn:'Slow Okinawan Folk',ilEn:'Fast Military March',
-    normal:{icon:'🌺',name:'Okinawan',bpm:76,swing:0.5,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],bassNote:[48,0,0,0,48,0,0,0,43,0,0,0,45,0,0,0],melody:[60,0,64,0,65,0,67,0,71,0,67,0,65,0,64,0]},
-    imposter:{icon:'🥁',name:'March',bpm:145,swing:0.5,kick:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],snare:[0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],bassNote:[48,0,48,0,43,0,43,0,48,0,48,0,43,0,43,0],melody:[60,0,64,0,67,0,64,0,60,0,64,0,67,67,67,0]}},
-  {id:'rnb_polka',name:'🎹 R&B vs ポルカ',nl:'ソウルフルR&B',il:'陽気ポルカ（超速）',nlEn:'Soulful R&B',ilEn:'Cheerful Polka',
-    normal:{icon:'🎹',name:'R&B',bpm:78,swing:0.63,kick:[1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0],hihat:[1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,0],bassNote:[48,0,0,48,0,0,48,0,46,0,0,46,0,0,46,0],melody:[67,0,69,67,65,0,67,0,64,0,65,0,67,65,64,0]},
-    imposter:{icon:'🎊',name:'Polka',bpm:155,swing:0.5,steps:8,kick:[1,0,1,0,1,0,1,0],snare:[0,1,0,1,0,1,0,1],hihat:[1,1,1,1,1,1,1,1],bassNote:[48,0,52,0,48,0,55,0],melody:[72,74,76,77,76,74,72,0]}},
-  {id:'afro_dnb',name:'🌍 アフロビート vs D&B',nl:'アフロビート（複雑）',il:'ドラムンベース（超速）',nlEn:'Afrobeat (complex)',ilEn:'Drum & Bass (super fast)',
-    normal:{icon:'🌍',name:'Afrobeat',bpm:85,swing:0.55,kick:[1,0,0,1,0,0,1,0,0,0,1,0,0,1,0,0],snare:[0,0,1,0,0,1,0,0,1,0,0,0,1,0,0,1],hihat:[1,1,0,1,0,1,1,0,1,1,0,1,0,1,1,0],bassNote:[48,0,0,48,0,0,50,0,0,48,0,0,48,0,0,46],melody:[67,0,69,0,67,65,0,67,65,0,62,0,64,0,65,0]},
-    imposter:{icon:'💥',name:'Drum & Bass',bpm:158,swing:0.5,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],bassNote:[36,0,36,36,0,0,36,0,36,0,36,36,0,0,36,0],melody:[72,72,0,75,0,72,0,0,72,72,0,75,72,0,0,0]}},
-  {id:'funk_classical',name:'🎺 ファンク vs クラシック',nl:'ゆったりファンク',il:'激速クラシック',nlEn:'Slow Funk',ilEn:'Fast Classical',
-    normal:{icon:'🎺',name:'Funk',bpm:88,swing:0.57,kick:[1,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0],snare:[0,0,0,0,1,0,0,1,0,0,0,0,1,0,1,0],hihat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],bassNote:[43,0,43,0,43,43,0,0,43,0,43,0,41,41,0,0],melody:[67,0,67,70,67,0,65,0,67,0,67,70,65,0,64,0]},
-    imposter:{icon:'🎼',name:'Classical',bpm:152,swing:0.5,kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hihat:[1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0],bassNote:[48,0,0,0,52,0,0,0,55,0,0,0,52,0,0,0],melody:[72,71,72,74,76,74,72,71,69,0,72,74,76,79,0,0]}},
-];
-
 const EMOJIS=['🐶','🦊','🐱','🐼','🐨','🐯','🦁','🐸','🐧','🦋'];
 function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2);}
 function rndRoom(){return (''+Math.floor(1000+Math.random()*9000));}
 
-let G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0,playAt:0,forceVoteTimer:null,uiTimer:null,playStartTime:0,useDBTracks:false,normalTrackUrl:'',imposterTrackUrl:'',normalTrackName:'',imposterTrackName:'',htmlAudio:null};
+let G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],isImposter:false,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0,playAt:0,forceVoteTimer:null,uiTimer:null,playStartTime:0,useDBTracks:true,normalTrackUrl:'',imposterTrackUrl:'',normalTrackName:'',imposterTrackName:'',htmlAudio:null};
 
 /* ============ UI HELPERS ============ */
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
@@ -678,17 +647,8 @@ function renderMembers(){
   if(sb2)sb2.disabled=G.members.length<3;
 }
 
-function renderTrackOpts(){
-  const el=document.getElementById('l-tracks');
-  if(!el)return;
-  el.innerHTML=TRACKS.map((tr,i)=>`<label class="track-card ${i===0?'sel':''}" onclick="pickTrack(${i})"><input type="radio" name="trk" ${i===0?'checked':''}><div class="track-card-info"><div class="track-card-name">${tr.name}</div><div class="track-normal">${L('everyoneLabel')}${lang==='ja'?tr.nl:tr.nlEn}</div><div class="track-imp">${L('imposterLabel')}${lang==='ja'?tr.il:tr.ilEn}</div></div></label>`).join('');
-}
-
-function pickTrack(i){
-  G.selTrack=TRACKS[i];
-  document.querySelectorAll('.track-card').forEach((el,j)=>el.classList.toggle('sel',i===j));
-  sb.from('rooms').update({track_set_id:TRACKS[i].id}).eq('id',G.roomDbId);
-}
+function renderTrackOpts(){} // TRACKSは使用しない
+function pickTrack(i){}
 
 /* ============ REALTIME ============ */
 /* ============ POLLING ============ */
@@ -882,7 +842,6 @@ async function doStart(){
 function applyMyTrack(){
   const me=G.members.find(m=>m.userId===G.myUserId);
   G.isImposter=me?.isImposter||false;
-  G.myMusic=null; // DB曲はstartPlayingで処理
   G.useDBTracks=true;
 }
 
@@ -981,14 +940,8 @@ function showOverlayState(state){
 }
 
 function startPlaying(){
-  let trackName='';
-  if(G.useDBTracks){
-    trackName=G.isImposter?(G.imposterTrackName||'あなたの曲'):(G.normalTrackName||'あなたの曲');
-  } else {
-    const m=G.myMusic;
-    trackName=m?m.name:'あなたの曲';
-  }
-  document.getElementById('p-icon').textContent=G.useDBTracks?'🎵':(G.myMusic?.icon||'🎵');
+  const trackName=G.isImposter?(G.imposterTrackName||'あなたの曲'):(G.normalTrackName||'あなたの曲');
+  document.getElementById('p-icon').textContent='🎵';
   document.getElementById('p-name').textContent=trackName;
   const titleEl=document.getElementById(G.isHost?'p-tap-title':'p-tap-title-g');
   if(titleEl)titleEl.textContent='🎵 '+trackName;
@@ -996,7 +949,7 @@ function startPlaying(){
   roleEl.textContent='🎵 '+trackName;
   roleEl.className='role-badge normal';
   document.getElementById('p-vinyl').style.borderColor='var(--purple)';
-  const steps=G.useDBTracks?16:(G.myMusic?.steps||16);
+  const steps=16;
   document.getElementById('p-beats').innerHTML=Array.from({length:steps},(_,i)=>`<div class="beat-dot" id="bd-${i}"></div>`).join('');
   document.getElementById('p-viz').innerHTML=Array.from({length:14},(_,i)=>`<div class="vbar" id="vb-${i}" style="height:4px;"></div>`).join('');
   show('s-playing');
@@ -1022,10 +975,12 @@ function tapToPlay(){
 }
 
 let G_musicWaitTimer=null;
+let G_musicWaitTimer=null;
+let G_sessionStartTime=0;
+
 function waitForHostPlay(){
   if(G_musicWaitTimer)clearInterval(G_musicWaitTimer);
-  // ゲスト：ホストがtapToPlayを押してplay_atがセットされるのを待つ
-  // play_atはホストがボタンを押した時だけセットされる（doStartではnull）
+  G_sessionStartTime=Date.now();
   G_musicWaitTimer=setInterval(async()=>{
     try{
       const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
@@ -1034,14 +989,12 @@ function waitForHostPlay(){
       const r=await fetch(base+'/rooms?select=play_at,status&id=eq.'+G.roomDbId,{headers});
       const data=await r.json();
       const room=data[0];
-      if(!room||room.status!=='playing')return; // まだplayingでなければスキップ
+      if(!room||room.status!=='playing')return;
       const playAt=room.play_at;
-      // play_atがnullでなく、かつ現在時刻より未来（または3秒以内の過去）のみ有効
       if(playAt){
         const t=new Date(playAt).getTime();
-        const now=Date.now();
-        // 必ず現在時刻より未来のplay_atのみ有効（過去のものは無視）
-        if(t>now){
+        // セッション開始後のplay_atのみ有効（古いものを無視）
+        if(t>G_sessionStartTime&&t>Date.now()-500){
           clearInterval(G_musicWaitTimer);
           G_musicWaitTimer=null;
           startMusicCountdown(playAt);
@@ -1053,119 +1006,80 @@ function waitForHostPlay(){
 
 function unlockIOSAudio(){
   try{
-    if(!G.audioCtx||G.audioCtx.state==='closed'){
-      G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(window._iosAudioCtx&&window._iosAudioCtx.state!=='closed'){
+      window._iosAudioCtx.resume();return;
     }
-    if(G.audioCtx.state==='suspended')G.audioCtx.resume();
-    const buf=G.audioCtx.createBuffer(1,1,22050);
-    const src=G.audioCtx.createBufferSource();
-    src.buffer=buf;src.connect(G.audioCtx.destination);src.start(0);
-    document.getElementById('p-ios-tap').style.display='none';
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const buf=ctx.createBuffer(1,1,22050);
+    const src=ctx.createBufferSource();
+    src.buffer=buf;src.connect(ctx.destination);src.start(0);
+    ctx.resume().then(()=>{window._iosAudioCtx=ctx;});
+    const btn=document.getElementById('p-ios-tap');
+    if(btn)btn.style.display='none';
   }catch(e){}
 }
 
 function startMusicCountdown(playAtISO){
   const playAt=new Date(playAtISO).getTime();
   showOverlayState('cd');
-
-  // iOS：ホーム画面で有効化済みの場合はボタン不要
   const iosBtn=document.getElementById('p-ios-tap');
-  if(iosBtn)iosBtn.style.display='none'; // カウントダウン中はボタン不要（ホーム画面で対応済み）
-
-  // AudioContext事前起動
-  try{
-    if(window._iosAudioCtx&&window._iosAudioCtx.state!=='closed'){
-      G.audioCtx=window._iosAudioCtx;
-    }
-    if(!G.audioCtx||G.audioCtx.state==='closed'){
-      G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    }
-    if(G.audioCtx.state==='suspended')G.audioCtx.resume();
-  }catch(e){}
+  if(iosBtn)iosBtn.style.display='none';
 
   const numEl=document.getElementById('p-cd-num');
   const msgEl=document.getElementById('p-cd-msg');
   const labels={3:'準備して！',2:'もうすぐ…',1:'いくよ！'};
-
   let musicStarted=false;
 
-  function cdTick(){
+  const cdTimer=setInterval(()=>{
     const remaining=playAt-Date.now();
-
     if(remaining<=0){
-      // カウントダウン終了 → 音楽再生
+      clearInterval(cdTimer);
       if(musicStarted)return;
       musicStarted=true;
       if(numEl)numEl.textContent='🎵';
-      if(msgEl)msgEl.textContent='';
-
-      // オーバーレイを隠す
-      const overlay=document.getElementById('p-tap-overlay');
-      if(overlay)overlay.style.display='none';
-
-      // AudioContext確認
-      try{
-        if(window._iosAudioCtx&&window._iosAudioCtx.state!=='closed'){
-          G.audioCtx=window._iosAudioCtx;
-        }
-        if(!G.audioCtx||G.audioCtx.state==='closed'){
-          G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-        }
-        if(G.audioCtx.state==='suspended')G.audioCtx.resume();
-      }catch(e){}
-
-      // 音楽再生開始
-      playMusic();
-
-      // 残り時間UIカウント（音楽再生後に開始）
-      let timeLeft=30;
-      const timerEl=document.getElementById('p-timer');
-      const preEl=document.getElementById('p-tap-timer-pre');
-      if(timerEl)timerEl.textContent=timeLeft;
-      if(preEl)preEl.textContent=timeLeft+'秒後に自動で投票へ';
-
-      G.uiTimer=setInterval(()=>{
-        timeLeft--;
-        const t=Math.max(0,timeLeft);
-        if(timerEl)timerEl.textContent=t;
-        if(timerEl)timerEl.style.color=t<=5?'var(--pink)':'var(--purple2)';
-        if(preEl)preEl.textContent=t>0?t+'秒後に投票へ':'';
-        if(timeLeft<=0){
-          clearInterval(G.uiTimer);
-          G.uiTimer=null;
-          // ボタンを表示
-          const btnWrap=document.getElementById('p-vote-btn-wrap');
-          if(btnWrap)btnWrap.style.display='block';
-          const label=document.getElementById('p-timer-label');
-          if(label)label.textContent='';
-          if(timerEl)timerEl.textContent='';
-          // 自動遷移も試みる（バックグラウンドで）
-          forceGoVoting();
-        }
-      },1000);
-
-      // 30秒後にforceGoVoting（uiTimerのバックアップ）
-      G.forceVoteTimer=setTimeout(()=>{
-        if(G.uiTimer){clearInterval(G.uiTimer);G.uiTimer=null;}
-        forceGoVoting();
-      },31000);
-
+      if(msgEl)msgEl.textContent='スタート！';
+      setTimeout(()=>{
+        const overlay=document.getElementById('p-tap-overlay');
+        if(overlay)overlay.style.display='none';
+        playMusic();
+        startVoteTimer();
+      },300);
       return;
     }
-
-    // カウントダウン表示
     const secs=Math.ceil(remaining/1000);
-    if(numEl)numEl.textContent=labels[secs]||String(secs);
+    if(numEl)numEl.textContent=secs<=3?(labels[secs]||String(secs)):String(secs);
     if(msgEl)msgEl.textContent='';
-    setTimeout(cdTick,80);
-  }
-
-  cdTick();
+  },100);
 }
 
-
-
-function mtof(m){return 440*Math.pow(2,(m-69)/12);}
+function startVoteTimer(){
+  let timeLeft=30;
+  const timerEl=document.getElementById('p-timer');
+  const preEl=document.getElementById('p-tap-timer-pre');
+  const btnWrap=document.getElementById('p-vote-btn-wrap');
+  if(timerEl){timerEl.textContent=timeLeft;timerEl.style.color='var(--purple2)';}
+  if(preEl)preEl.textContent=timeLeft+'秒後に投票へ';
+  if(btnWrap)btnWrap.style.display='none';
+  if(G.uiTimer){clearInterval(G.uiTimer);G.uiTimer=null;}
+  G.uiTimer=setInterval(()=>{
+    timeLeft--;
+    const t=Math.max(0,timeLeft);
+    if(timerEl){timerEl.textContent=t;timerEl.style.color=t<=5?'var(--pink)':'var(--purple2)';}
+    if(preEl)preEl.textContent=t>0?t+'秒後に投票へ':'';
+    if(timeLeft<=0){
+      clearInterval(G.uiTimer);G.uiTimer=null;
+      if(timerEl)timerEl.textContent='';
+      if(preEl)preEl.textContent='';
+      if(btnWrap)btnWrap.style.display='block';
+      forceGoVoting();
+    }
+  },1000);
+  G.forceVoteTimer=setTimeout(()=>{
+    if(G.uiTimer){clearInterval(G.uiTimer);G.uiTimer=null;}
+    if(btnWrap)btnWrap.style.display='block';
+    forceGoVoting();
+  },32000);
+}
 
 function playMusic(){
   if(G.beatTimer){clearTimeout(G.beatTimer);G.beatTimer=null;}
@@ -1221,37 +1135,8 @@ function playMusic(){
     return;
   }
 
-  try{
-    // iOS事前初期化したContextを再利用
-    if(window._iosAudioCtx&&window._iosAudioCtx.state!=='closed'){
-      G.audioCtx=window._iosAudioCtx;
-    }
-    if(!G.audioCtx||G.audioCtx.state==='closed'){
-      G.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    }
-    if(G.audioCtx.state==='suspended'){G.audioCtx.resume();}
-  }catch(e){console.warn('AudioContext error',e);return;}
-
-
-  const ctx=G.audioCtx,m=G.myMusic,steps=m.steps||16;
-  const spb=60/m.bpm,sb2=spb/4;
-  G.stepIdx=0;
-  function tick(){
-    if(!G.audioCtx)return;
-    const now=ctx.currentTime,si=G.stepIdx%steps;
-    const dur=(si%2===0)?m.swing*2*sb2:(2-m.swing*2)*sb2||sb2;
-    if(m.kick[si]){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.setValueAtTime(150,now);o.frequency.exponentialRampToValueAtTime(40,now+0.1);g.gain.setValueAtTime(0.9,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.25);o.type='sine';o.start(now);o.stop(now+0.25);}
-    if(m.snare[si]){const buf=ctx.createBuffer(1,ctx.sampleRate*0.2,ctx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5);const src=ctx.createBufferSource(),g=ctx.createGain(),f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=1200;src.buffer=buf;src.connect(f);f.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0.55,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.2);src.start(now);}
-    if(m.hihat[si]){const buf=ctx.createBuffer(1,ctx.sampleRate*0.06,ctx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);const src=ctx.createBufferSource(),g=ctx.createGain(),f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=8000;src.buffer=buf;src.connect(f);f.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0.25,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.06);src.start(now);}
-    if(m.bassNote[si]){const o=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=600;o.frequency.value=mtof(m.bassNote[si]);o.type='sawtooth';o.connect(f);f.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0.38,now);g.gain.exponentialRampToValueAtTime(0.001,now+dur*0.9);o.start(now);o.stop(now+dur);}
-    if(m.melody[si]){const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.value=mtof(m.melody[si]);o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0.22,now);g.gain.exponentialRampToValueAtTime(0.001,now+dur*0.85);o.start(now);o.stop(now+dur);}
-    const prev=(si-1+steps)%steps;
-    document.getElementById('bd-'+si)?.classList.add(si%4===0?'strong':'on');
-    document.getElementById('bd-'+prev)?.classList.remove('on','strong');
-    for(let i=0;i<14;i++){const vb=document.getElementById('vb-'+i);if(vb){const h=(m.kick[si]||m.snare[si])?(10+Math.random()*34):(3+Math.random()*10);vb.style.height=h+'px';vb.style.background=G.isImposter?'var(--coral)':'var(--purple)';}}
-    G.stepIdx++;G.beatTimer=setTimeout(tick,dur*1000);
-  }
-  tick();
+  // Web Audio APIは使用しません（アップロード曲のみ使用）
+  console.warn('Web Audio fallback - should not reach here');
 }
 
 function stopMusic(){
@@ -1371,7 +1256,7 @@ function goHome(){
   stopMusic();
   stopPolling();
   if(G.channel){sb.removeChannel(G.channel);}
-  G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],selTrack:TRACKS[0],isImposter:false,myMusic:null,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0,playAt:0,forceVoteTimer:null,uiTimer:null,playStartTime:0,useDBTracks:false,normalTrackUrl:'',imposterTrackUrl:'',normalTrackName:'',imposterTrackName:'',htmlAudio:null};
+  G={myName:'',myUserId:'',myMemberId:'',isHost:false,roomId:'',roomDbId:'',members:[],isImposter:false,myVote:'',channel:null,audioCtx:null,beatTimer:null,stepIdx:0,playAt:0,forceVoteTimer:null,uiTimer:null,playStartTime:0,useDBTracks:true,normalTrackUrl:'',imposterTrackUrl:'',normalTrackName:'',imposterTrackName:'',htmlAudio:null};
   document.getElementById('h-name').value='';const jn=document.getElementById('h-join-name');if(jn)jn.value='';
   document.getElementById('h-code').value='';
   show('s-home');
