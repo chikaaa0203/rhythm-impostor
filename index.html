@@ -340,7 +340,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:
           <!-- iOSのみタップボタンを表示 -->
           <button id="p-ios-tap" onclick="unlockIOSAudio()" style="display:none;padding:12px 28px;background:rgba(139,92,246,0.2);color:var(--purple2);border:1.5px solid var(--purple);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">🔊 音を有効化（iOSのみ）</button>
         </div>
-        <div style="font-size:12px;color:var(--text3);" id="p-tap-timer-pre">30秒後に自動で投票へ</div>
+        <div style="font-size:12px;color:var(--text3);" id="p-tap-timer-pre"></div>
       </div>
 
       <div class="play-hero">
@@ -722,7 +722,7 @@ async function poll(){
             G.normalTrackName=nData[0]?.name||'';
             G.imposterTrackName=iData[0]?.name||'';
           }
-          applyMyTrack();
+          await applyMyTrack();
           stopPolling();
           // startPlayingへ（play_atはwaitForHostPlayで待つ）
           startPlaying();
@@ -812,6 +812,7 @@ async function doStart(){
     imposterTrackId=iTrack.id; imposterTrackName=iTrack.name; imposterTrackUrl=iTrack.file_url;
 
     G.useDBTracks=true;
+    // ホスト自身はインポスターかどうか確定後にURLをセット（後でapplyMyTrackで上書きされる）
     G.normalTrackUrl=normalTrackUrl;
     G.imposterTrackUrl=imposterTrackUrl;
     G.normalTrackName=normalTrackName;
@@ -839,10 +840,34 @@ async function doStart(){
 
 
 
-function applyMyTrack(){
+async function applyMyTrack(){
   const me=G.members.find(m=>m.userId===G.myUserId);
   G.isImposter=me?.isImposter||false;
   G.useDBTracks=true;
+
+  // 自分のassigned_track_idから曲URLを直接取得
+  if(me?.trackId){
+    try{
+      const base='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
+      const key='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+      const headers={'apikey':key,'Authorization':'Bearer '+key};
+      const res=await fetch(base+'/tracks?id=eq.'+me.trackId,{headers});
+      const data=await res.json();
+      if(data[0]){
+        // 自分の曲URLを直接セット（インポスターでも通常でも正しいURLが入る）
+        const myUrl=data[0].file_url;
+        const myName=data[0].name;
+        if(G.isImposter){
+          G.imposterTrackUrl=myUrl;
+          G.imposterTrackName=myName;
+        } else {
+          G.normalTrackUrl=myUrl;
+          G.normalTrackName=myName;
+        }
+        console.log('My track:', myName, G.isImposter?'(imposter)':'(normal)', myUrl);
+      }
+    }catch(e){console.warn('applyMyTrack error',e);}
+  }
 }
 
 /* ============ COUNTDOWN ============ */
@@ -1021,8 +1046,10 @@ function unlockIOSAudio(){
 function startMusicCountdown(playAtISO){
   const playAt=new Date(playAtISO).getTime();
   showOverlayState('cd');
+  // iOS検出：カウントダウン中もタップボタンを表示（音声解除のため）
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
   const iosBtn=document.getElementById('p-ios-tap');
-  if(iosBtn)iosBtn.style.display='none';
+  if(iosBtn)iosBtn.style.display=isIOS?'block':'none';
 
   const numEl=document.getElementById('p-cd-num');
   const msgEl=document.getElementById('p-cd-msg');
@@ -1037,12 +1064,11 @@ function startMusicCountdown(playAtISO){
       musicStarted=true;
       if(numEl)numEl.textContent='🎵';
       if(msgEl)msgEl.textContent='スタート！';
-      setTimeout(()=>{
-        const overlay=document.getElementById('p-tap-overlay');
-        if(overlay)overlay.style.display='none';
-        playMusic();
-        startVoteTimer();
-      },300);
+      const overlay=document.getElementById('p-tap-overlay');
+      if(overlay)overlay.style.display='none';
+      playMusic();
+      // startVoteTimerを少し遅らせて確実に実行
+      setTimeout(()=>startVoteTimer(),500);
       return;
     }
     const secs=Math.ceil(remaining/1000);
@@ -1052,32 +1078,43 @@ function startMusicCountdown(playAtISO){
 }
 
 function startVoteTimer(){
+  console.log('startVoteTimer called');
+  // 既存タイマーをクリア
+  if(G.uiTimer){clearInterval(G.uiTimer);G.uiTimer=null;}
+  if(G.forceVoteTimer){clearTimeout(G.forceVoteTimer);G.forceVoteTimer=null;}
+
   let timeLeft=30;
   const timerEl=document.getElementById('p-timer');
+  const labelEl=document.getElementById('p-timer-label');
   const preEl=document.getElementById('p-tap-timer-pre');
   const btnWrap=document.getElementById('p-vote-btn-wrap');
+
+  if(labelEl)labelEl.textContent='残り時間';
   if(timerEl){timerEl.textContent=timeLeft;timerEl.style.color='var(--purple2)';}
-  if(preEl)preEl.textContent=timeLeft+'秒後に投票へ';
+  if(preEl)preEl.textContent='';
   if(btnWrap)btnWrap.style.display='none';
-  if(G.uiTimer){clearInterval(G.uiTimer);G.uiTimer=null;}
+
   G.uiTimer=setInterval(()=>{
     timeLeft--;
     const t=Math.max(0,timeLeft);
     if(timerEl){timerEl.textContent=t;timerEl.style.color=t<=5?'var(--pink)':'var(--purple2)';}
-    if(preEl)preEl.textContent=t>0?t+'秒後に投票へ':'';
+    console.log('timer:',t);
     if(timeLeft<=0){
       clearInterval(G.uiTimer);G.uiTimer=null;
+      if(labelEl)labelEl.textContent='';
       if(timerEl)timerEl.textContent='';
-      if(preEl)preEl.textContent='';
-      if(btnWrap)btnWrap.style.display='block';
+      if(btnWrap){btnWrap.style.display='block';console.log('vote button shown');}
       forceGoVoting();
     }
   },1000);
+
+  // 33秒後の安全装置
   G.forceVoteTimer=setTimeout(()=>{
+    console.log('forceVoteTimer fired');
     if(G.uiTimer){clearInterval(G.uiTimer);G.uiTimer=null;}
     if(btnWrap)btnWrap.style.display='block';
     forceGoVoting();
-  },32000);
+  },33000);
 }
 
 function playMusic(){
@@ -1086,7 +1123,8 @@ function playMusic(){
   // DBトラックの場合はHTML Audioで再生
   if(G.useDBTracks){
     const url=G.isImposter?G.imposterTrackUrl:G.normalTrackUrl;
-    if(!url){console.warn('No track URL');return;}
+    console.log('Playing URL:', url, 'isImposter:', G.isImposter);
+    if(!url){console.warn('No track URL - imposter:'+G.isImposter+' normalUrl:'+G.normalTrackUrl+' imposterUrl:'+G.imposterTrackUrl);return;}
     G.htmlAudio=new Audio();
     G.htmlAudio.crossOrigin='anonymous';
     G.htmlAudio.preload='auto';
