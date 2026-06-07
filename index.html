@@ -593,11 +593,11 @@ async function doCreate(){
     const {error:ue}=await sb.from('users').insert({id:userId,name,icon_url:EMOJIS[0]});
     if(ue)throw ue;
     const code=rndRoom();
-    const {data:room,error:re}=await sb.from('rooms').insert({room_code:code,host_id:userId,status:'waiting',track_set_id:TRACKS[0].id}).select().single();
+    const {data:room,error:re}=await sb.from('rooms').insert({room_code:code,host_id:userId,status:'waiting',track_set_id:null}).select().single();
     if(re)throw re;
     const {data:mem,error:me}=await sb.from('room_members').insert({room_id:room.id,user_id:userId}).select().single();
     if(me)throw me;
-    Object.assign(G,{myName:name,myUserId:userId,myMemberId:mem.id,isHost:true,roomId:code,roomDbId:room.id,selTrack:TRACKS[0]});
+    Object.assign(G,{myName:name,myUserId:userId,myMemberId:mem.id,isHost:true,roomId:code,roomDbId:room.id});
     await openLobby();
   }catch(e){showErr(L('errPfx')+e.message);}
   finally{setBtn('h-create',true,L('hCreate'));}
@@ -621,8 +621,7 @@ async function doJoin(){
     const {data:mem,error:me}=await sb.from('room_members').insert({room_id:room.id,user_id:userId}).select().single();
     if(me)throw me;
     Object.assign(G,{myName:name,myUserId:userId,myMemberId:mem.id,isHost:false,roomId:code,roomDbId:room.id});
-    const ts=TRACKS.find(tr=>tr.id===room.track_set_id)||TRACKS[0];
-    G.selTrack=ts;
+    // DB曲使用のためTRACKS不要
     await openLobby();
   }catch(e){showErr(L('errPfx')+e.message);}
   finally{setBtn('h-join',true,L('hJoin'));}
@@ -704,7 +703,7 @@ async function poll(){
         const prev=G_lastStatus;
         G_lastStatus=room.status;
         if(room.status==='playing'&&prev==='waiting'){
-          G.selTrack=TRACKS.find(tr=>tr.id===room.track_set_id)||TRACKS[0];
+          // DB曲使用のためTRACKS不要
           // DB曲の情報を取得
           const base2='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
           const key2='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
