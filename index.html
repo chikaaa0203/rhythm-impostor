@@ -744,9 +744,28 @@ async function poll(){
         G_lastStatus=room.status;
         if(room.status==='playing'&&prev==='waiting'){
           G.selTrack=TRACKS.find(tr=>tr.id===room.track_set_id)||TRACKS[0];
+          // DB曲の情報を取得
+          const base2='https://orhtqozyagxipngaklsy.supabase.co/rest/v1';
+          const key2='sb_publishable_zQiywE5uLylw4U42tz6u3A_Pb-XL2eS';
+          const hdrs2={'apikey':key2,'Authorization':'Bearer '+key2};
+          const rRes2=await fetch(base2+'/rooms?select=normal_track_id,imposter_track_id&id=eq.'+G.roomDbId,{headers:hdrs2});
+          const rData2=await rRes2.json();
+          if(rData2[0]?.normal_track_id){
+            // DB曲を使う場合、track情報を取得
+            const nRes=await fetch(base2+'/tracks?id=eq.'+rData2[0].normal_track_id,{headers:hdrs2});
+            const iRes=await fetch(base2+'/tracks?id=eq.'+rData2[0].imposter_track_id,{headers:hdrs2});
+            const nData=await nRes.json();
+            const iData=await iRes.json();
+            G.useDBTracks=true;
+            G.normalTrackUrl=nData[0]?.file_url||'';
+            G.imposterTrackUrl=iData[0]?.file_url||'';
+            G.normalTrackName=nData[0]?.name||'';
+            G.imposterTrackName=iData[0]?.name||'';
+          }
           applyMyTrack();
           stopPolling();
-          startCountdown();
+          // startPlayingへ（play_atはwaitForHostPlayで待つ）
+          startPlaying();
           return;
         }
         if(room.status==='voting'&&prev!=='result'){
@@ -1021,7 +1040,8 @@ function waitForHostPlay(){
       if(playAt){
         const t=new Date(playAt).getTime();
         const now=Date.now();
-        if(t>now-500){ // 0.5秒以内の誤差まで許容（ほぼ未来）
+        // 必ず現在時刻より未来のplay_atのみ有効（過去のものは無視）
+        if(t>now){
           clearInterval(G_musicWaitTimer);
           G_musicWaitTimer=null;
           startMusicCountdown(playAt);
@@ -1153,28 +1173,51 @@ function playMusic(){
   // DBトラックの場合はHTML Audioで再生
   if(G.useDBTracks){
     const url=G.isImposter?G.imposterTrackUrl:G.normalTrackUrl;
-    if(url){
-      G.htmlAudio=new Audio(url);
-      G.htmlAudio.play().catch(e=>console.warn('audio play failed',e));
-      // ビジュアライザーアニメーション（ランダム）
-      function animViz(){
-        for(let i=0;i<14;i++){
-          const vb=document.getElementById('vb-'+i);
-          if(vb){vb.style.height=(4+Math.random()*40)+'px';vb.style.background='var(--purple)';}
-        }
-        // ビートドットも動かす
-        const steps=16;
-        const si=Math.floor(Date.now()/300)%steps;
-        for(let i=0;i<steps;i++){
-          const bd=document.getElementById('bd-'+i);
-          if(bd){bd.classList.toggle('on',i===si);bd.classList.toggle('strong',i===si&&si%4===0);}
-        }
-        if(G.htmlAudio&&!G.htmlAudio.ended&&!G.htmlAudio.paused){
-          G.beatTimer=setTimeout(animViz,150);
+    if(!url){console.warn('No track URL');return;}
+    G.htmlAudio=new Audio();
+    G.htmlAudio.crossOrigin='anonymous';
+    G.htmlAudio.preload='auto';
+    G.htmlAudio.src=url;
+    // 再生試行（Android/iOS両対応）
+    const playPromise=G.htmlAudio.play();
+    if(playPromise!==undefined){
+      playPromise.then(()=>{
+        console.log('Audio playing:', url);
+      }).catch(e=>{
+        console.warn('Audio play failed, retrying:', e);
+        // 再試行
+        setTimeout(()=>{
+          if(G.htmlAudio){
+            G.htmlAudio.play().catch(e2=>console.warn('Retry failed:',e2));
+          }
+        },500);
+      });
+    }
+    // ビジュアライザーアニメーション
+    function animViz(){
+      if(!G.htmlAudio)return;
+      for(let i=0;i<14;i++){
+        const vb=document.getElementById('vb-'+i);
+        if(vb){
+          const h=G.htmlAudio.paused?4:(6+Math.random()*38);
+          vb.style.height=h+'px';
+          vb.style.background='linear-gradient(0deg,var(--purple),var(--cyan))';
         }
       }
-      animViz();
+      const steps=16;
+      const si=Math.floor(Date.now()/300)%steps;
+      for(let i=0;i<steps;i++){
+        const bd=document.getElementById('bd-'+i);
+        if(bd){
+          bd.classList.toggle('on',i===si);
+          bd.classList.toggle('strong',i===si&&si%4===0);
+        }
+      }
+      if(G.htmlAudio&&!G.htmlAudio.ended){
+        G.beatTimer=setTimeout(animViz,150);
+      }
     }
+    animViz();
     return;
   }
 
